@@ -1,0 +1,81 @@
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const companyService = {
+  getCompanies: async () => {
+    try {
+      const response = await api.get('/companies/');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch companies');
+    }
+  },
+
+  getCompanyById: async (id) => {
+    try {
+      const response = await api.get(`/companies/${id}/`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch company details');
+    }
+  },
+
+  createCompany: async (companyData) => {
+    try {
+      const response = await api.post('/companies/', companyData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to create company');
+    }
+  },
+
+  updateCompany: async (id, companyData) => {
+    try {
+      const response = await api.put(`/companies/${id}/`, companyData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update company');
+    }
+  },
+
+  deleteCompany: async (id) => {
+    try {
+      await api.delete(`/companies/${id}/`);
+      return true;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to delete company');
+    }
+  },
+
+  bulkUploadEmployees: async (companyId, file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post(`/companies/${companyId}/bulk-upload/`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to upload employees');
+    }
+  }
+}; 

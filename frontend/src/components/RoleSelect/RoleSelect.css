@@ -1,0 +1,38 @@
+.role-select,
+.company-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  margin-bottom: 15px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.role-select:focus,
+.company-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.role-select option,
+.company-select option {
+  padding: 10px;
+}
+
+.loading {
+  color: #666;
+  font-style: italic;
+  padding: 10px;
+}
+
+.error {
+  color: #dc3545;
+  padding: 10px;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  background-color: #fff;
+  margin-bottom: 15px;
+} 
