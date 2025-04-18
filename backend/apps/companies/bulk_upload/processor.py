@@ -8,7 +8,7 @@ import csv
 import io
 from datetime import datetime
 from ..models import Company
-from ..serializers import CompanySerializer
+from ..api.serializers import CompanySerializer
 
 def process_company_file(file, created_by_user):
     """

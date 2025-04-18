@@ -5,10 +5,10 @@ Views for the companies app.
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Q
 from .models import Company
-from .serializers import CompanySerializer
+from .api.serializers import CompanySerializer
 from .bulk_upload.processor import process_company_file
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -16,7 +16,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     ViewSet for viewing and editing company data.
     """
     serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         """
