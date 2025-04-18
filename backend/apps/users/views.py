@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .serializers import UserSerializer, UserCreateSerializer
 
+
 User = get_user_model()
 
 class UserRegisterView(generics.CreateAPIView):

@@ -117,3 +117,40 @@ REST_FRAMEWORK = {
 
 # Encryption key for sensitive data (base64-encoded 32-byte key)
 ENCRYPTION_KEY = 'S0d5c3RlbXNBcmVBd2Vzb21lQW5kU2VjdXJlMjAyNA==' 
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,  # Keeps Django's default logs
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',  # Only log errors and above
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'error.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        # Optional: Log your custom app errors
+        'myapp': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
