@@ -6,6 +6,7 @@ import { companyService } from '../../services/companyService';
 import CompanyManagement from './CompanyManagement';
 import UserManagement from './UserManagement';
 import '../../styles/Dashboard.css';
+import EmployeeManagement from './EmployeeManagement';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -84,10 +85,10 @@ const AdminDashboard = () => {
             Companies
           </Link>
           <Link 
-            to="/admin/settings" 
-            className={`nav-link ${location.pathname === '/admin/settings' ? 'active' : ''}`}
+            to="/admin/employees" 
+            className={`nav-link ${location.pathname === '/admin/employees' ? 'active' : ''}`}
           >
-            Settings
+            Employees
           </Link>
         </div>
       </nav>
@@ -120,7 +121,7 @@ const AdminDashboard = () => {
           } />
           <Route path="users" element={<UserManagement />} />
           <Route path="companies" element={<CompanyManagement />} />
-          <Route path="settings" element={<div>Settings coming soon</div>} />
+          <Route path="employees" element={<EmployeeManagement/>} />
         </Routes>
       </main>
     </div>

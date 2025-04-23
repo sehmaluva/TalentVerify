@@ -7,8 +7,10 @@ import CompanyDashboard from './pages/company/CompanyDashboard';
 import SearchPage from './pages/search/SearchPage';
 import UserManagement from './pages/admin/UserManagement';
 import CompanyManagement from './pages/admin/CompanyManagement';
+//import EmployeeManagent from './pages/admin/EmployeeManagement';
 import Navbar from './components/Navbar/Navbar';
 import './App.css';
+import EmployeeManagement from './pages/admin/EmployeeManagement';
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -78,10 +80,10 @@ function App() {
               }
             />
             <Route
-              path="/admin/settings"
+              path="/admin/employees"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <div>Settings coming soon</div>
+                  <EmployeeManagement/>
                 </ProtectedRoute>
               }
             />

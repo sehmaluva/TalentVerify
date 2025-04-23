@@ -1,7 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
-import { companyService } from '../services/companyService';
 import { ROLES } from '../config';
 import '../styles/Auth.css';
 
@@ -14,34 +13,12 @@ const LoginPage = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [companies, setCompanies] = useState([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
   
   const { login, isAuthenticated, user } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
   // Fetch companies when role is 'company'
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      if (formData.role === ROLES.COMPANY) {
-        setLoadingCompanies(true);
-        try {
-          const data = await companyService.getCompanies();
-          // Ensure data is an array
-          setCompanies(Array.isArray(data) ? data : []);
-        } catch (err) {
-          console.error('Error fetching companies:', err);
-          setError('Failed to load companies. Please try again.');
-          setCompanies([]); // Set empty array on error
-        } finally {
-          setLoadingCompanies(false);
-        }
-      }
-    };
-
-    fetchCompanies();
-  }, [formData.role]);
 
   // Handle navigation after authentication
   useEffect(() => {
@@ -111,41 +88,7 @@ const LoginPage = () => {
               required
             />
           </div>
-          <div className="form-group">
-            <label htmlFor="role">Role</label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-            >
-              <option value={ROLES.ADMIN}>Admin</option>
-              <option value={ROLES.COMPANY}>Company</option>
-              <option value={ROLES.EMPLOYEE}>Employee</option>
-            </select>
-          </div>
-          {formData.role === ROLES.COMPANY && (
-            <div className="form-group">
-              <label htmlFor="company">Company</label>
-              <select
-                id="company"
-                name="company"
-                value={formData.company}
-                onChange={handleChange}
-                required
-                disabled={loadingCompanies}
-              >
-                <option value="">Select Company</option>
-                {companies.map(company => (
-                  <option key={company.id} value={company.id}>
-                    {company.name}
-                  </option>
-                ))}
-              </select>
-              {loadingCompanies && <div className="loading-message">Loading companies...</div>}
-            </div>
-          )}
+  
           <button 
             type="submit" 
             className="submit-button"

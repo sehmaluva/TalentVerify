@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { companyService } from '../../services/companyService';
+import {userService} from '../../services/userService';
 import DataUpload from '../../components/DataUpload/DataUpload';
 import '../../styles/CompanyManagement.css';
 
@@ -10,11 +11,17 @@ const CompanyManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    industry: '',
-    location: '',
-    website: '',
-    founded_year: '',
-    description: ''
+    registration_date: '',
+    registration_number: '',
+    address: '',
+    contact_person: '',
+    departments: '',
+    phone: '',
+    email: '',
+    createAdmin: false,
+    adminUsername: '',
+    adminPassword: '',
+    adminEmail: ''
   });
   const [editingCompany, setEditingCompany] = useState(null);
 
@@ -36,37 +43,70 @@ const CompanyManagement = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ?  checked : value
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Submitting company data:', formData);
     setLoading(true);
     setError('');
 
+    // Format departments as array for backend
+    const departmentsArray = formData.departments.split(',').map(dept => dept.trim()).filter(dept => dept);
+    const companyData = {
+      name: formData.name,
+      registration_date: formData.registration_date,
+      registration_number: formData.registration_number,
+      address: formData.address,
+      contact_person: formData.contact_person,
+      departments: departmentsArray,
+      phone: formData.phone,
+      email: formData.email
+    };
+
     try {
+      let newCompany;
       if (editingCompany) {
-        await companyService.updateCompany(editingCompany.id, formData);
+        await companyService.updateCompany(editingCompany.id, companyData);
         setCompanies(companies.map(company => 
-          company.id === editingCompany.id ? { ...company, ...formData } : company
+          company.id === editingCompany.id ? { ...company, ...companyData } : company
         ));
       } else {
-        const newCompany = await companyService.createCompany(formData);
+        newCompany = await companyService.createCompany(companyData);
         setCompanies([...companies, newCompany]);
+
+        // Create admin user for the company if requested
+        if (formData.createAdmin && newCompany.id) {
+          const adminData = {
+            username: formData.adminUsername,
+            password: formData.adminPassword,
+            email: formData.adminEmail,
+            role: 'company',
+            company_id: newCompany.id
+          };
+          await userService.createUser(adminData);
+        }
       }
       
       setShowForm(false);
       setFormData({
         name: '',
-        industry: '',
-        location: '',
-        website: '',
-        founded_year: '',
-        description: ''
+        registration_date: '',
+        registration_number: '',
+        address: '',
+        contact_person: '',
+        departments: '',
+        phone: '',
+        email: '',
+        createAdmin: false,
+        adminUsername: '',
+        adminPassword: '',
+        adminEmail: ''
       });
       setEditingCompany(null);
     } catch (err) {
@@ -80,11 +120,17 @@ const CompanyManagement = () => {
     setEditingCompany(company);
     setFormData({
       name: company.name,
-      industry: company.industry || '',
-      location: company.location || '',
-      website: company.website || '',
-      founded_year: company.founded_year || '',
-      description: company.description || ''
+      registration_date: company.registration_date || '',
+      registration_number: company.registration_number || '',
+      address: company.address || '',
+      contact_person: company.contact_person || '',
+      departments: company.departments ? company.departments.join(', ') : '',
+      phone: company.phone || '',
+      email: company.email || '',
+      createAdmin: false,
+      adminUsername: '',
+      adminPassword: '',
+      adminEmail: ''
     });
     setShowForm(true);
   };
@@ -109,11 +155,17 @@ const CompanyManagement = () => {
     setShowForm(false);
     setFormData({
       name: '',
-      industry: '',
-      location: '',
-      website: '',
-      founded_year: '',
-      description: ''
+        registration_date: '',
+        registration_number: '',
+        address: '',
+        contact_person: '',
+        departments: '',
+        phone: '',
+        email: '',
+        createAdmin: false,
+        adminUsername: '',
+        adminPassword: '',
+        adminEmail: ''
     });
     setEditingCompany(null);
   };
@@ -159,142 +211,214 @@ const CompanyManagement = () => {
         </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+    {error && <div className="error-message">{error}</div>}
 
-      {showForm ? (
-        <div className="form-container">
-          <form onSubmit={handleSubmit} className="company-form">
-            <div className="form-group">
-              <label htmlFor="name">Company Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="industry">Industry</label>
-              <input
-                type="text"
-                id="industry"
-                name="industry"
-                value={formData.industry}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="location">Location</label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="website">Website</label>
-              <input
-                type="url"
-                id="website"
-                name="website"
-                value={formData.website}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="founded_year">Founded Year</label>
-              <input
-                type="number"
-                id="founded_year"
-                name="founded_year"
-                value={formData.founded_year}
-                onChange={handleChange}
-                min="1800"
-                max={new Date().getFullYear()}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="description">Description</label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows="4"
-              />
-            </div>
-            
-            <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : (editingCompany ? 'Update' : 'Create')}
-              </button>
-              <button 
-                type="button" 
-                className="btn-secondary"
-                onClick={handleCancel}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+  {showForm ? (
+    <div className="form-container">
+      <form onSubmit={handleSubmit} className="company-form">
+        {/* Company Information Fields */}
+        <div className="form-group">
+          <label htmlFor="name">Company Name</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
         </div>
-      ) : (
-        <div className="data-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Industry</th>
-                <th>Location</th>
-                <th>Website</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {companies.map(company => (
-                <tr key={company.id}>
-                  <td>{company.name}</td>
-                  <td>{company.industry}</td>
-                  <td>{company.location}</td>
-                  <td>
-                    {company.website ? (
-                      <a href={company.website} target="_blank" rel="noopener noreferrer">
-                        {company.website}
-                      </a>
-                    ) : '-'}
-                  </td>
-                  <td className="actions">
-                    <button 
-                      className="btn-link"
-                      onClick={() => handleEdit(company)}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      className="btn-link delete"
-                      onClick={() => handleDelete(company.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        <div className="form-group">
+          <label htmlFor="registration_date">Registration Date</label>
+          <input
+            type="date"
+            id="registration_date"
+            name="registration_date"
+            value={formData.registration_date}
+            onChange={handleChange}
+            required
+          />
         </div>
-      )}
+
+        <div className="form-group">
+          <label htmlFor="registration_number">Registration Number</label>
+          <input
+            type="text"
+            id="registration_number"
+            name="registration_number"
+            value={formData.registration_number}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="address">Address</label>
+          <input
+            type="text"
+            id="address"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="contact_person">Contact Person</label>
+          <input
+            type="text"
+            id="contact_person"
+            name="contact_person"
+            value={formData.contact_person}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="departments">Departments (comma separated)</label>
+          <input
+            type="text"
+            id="departments"
+            name="departments"
+            value={formData.departments}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="phone">Phone</label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Admin Creation Section */}
+        <div className="form-group checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              name="createAdmin"
+              checked={formData.createAdmin}
+              onChange={handleChange}
+            />
+            Create Admin User
+          </label>
+        </div>
+
+        {formData.createAdmin && (
+          <>
+            <div className="form-group">
+              <label htmlFor="adminUsername">Admin Username</label>
+              <input
+                type="text"
+                id="adminUsername"
+                name="adminUsername"
+                value={formData.adminUsername}
+                onChange={handleChange}
+                required={formData.createAdmin}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="adminPassword">Admin Password</label>
+              <input
+                type="password"
+                id="adminPassword"
+                name="adminPassword"
+                value={formData.adminPassword}
+                onChange={handleChange}
+                required={formData.createAdmin}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="adminEmail">Admin Email</label>
+              <input
+                type="email"
+                id="adminEmail"
+                name="adminEmail"
+                value={formData.adminEmail}
+                onChange={handleChange}
+                required={formData.createAdmin}
+              />
+            </div>
+          </>
+        )}
+
+        <div className="form-actions">
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Saving...' : (editingCompany ? 'Update' : 'Create')}
+          </button>
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={handleCancel}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
+    ) : (
+    <div className="data-table">
+      <table>
+        <thead>
+          <tr>
+            <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+            <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Industry</th>
+            <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
+            <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {companies.map(company => (
+            <tr key={company.id}>
+              <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.name}</td>
+              <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.industry}</td>
+              <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.location}</td>
+              <td className="px-4 py-2 border-b border-gray-200 text-sm">
+                <button 
+                  className="btn-secondary"
+                  onClick={() => handleEdit(company)}
+                >
+                  Edit
+                </button>
+                <button 
+                  className="btn-danger"
+                  onClick={() => handleDelete(company.id)}
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+  </div>
   );
 };
 
-export default CompanyManagement; 
+export default CompanyManagement;
