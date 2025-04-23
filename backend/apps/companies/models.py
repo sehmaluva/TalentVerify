@@ -20,7 +20,7 @@ class Company(models.Model):
     registration_number = models.CharField(max_length=100, unique=True)
     address = models.TextField()
     contact_person = models.CharField(max_length=255)
-    departments = models.JSONField(default=list)
+    departments = models.TextField()
     employee_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     phone = models.CharField(max_length=20)
     email = models.EmailField()

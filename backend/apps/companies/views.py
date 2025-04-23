@@ -74,13 +74,22 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        departments = request.data.get('departments', [])
+        #departments = request.data.get('departments', [])
+        import re
+        departments = [d.strip() for d in re.split(r'(?:\\n|\n|,|;)+', departments_text) if d.strip()]
+        #existing_departments = {dept.name: dept for dept in company.department_set.all()}
+        for dept_name in departments:
+            Department.objects.create(
+                company=company,
+                name=dept_name
+            )
+        """
         if not isinstance(departments, list):
             return Response(
                 {"error": "Departments must be a list"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+        """
         company.departments = departments
         company.save()
         
