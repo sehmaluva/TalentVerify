@@ -119,7 +119,7 @@ class Department(models.Model):
     class Meta:
         unique_together = ('company', 'name')
         verbose_name = 'Department'
-        verbose_name_plural = 'department'
+        verbose_name_plural = 'departments'
         ordering = ['name']
 
     def __str__(self):

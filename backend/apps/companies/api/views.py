@@ -128,7 +128,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return Employee.objects.all()
         elif user.role == 'company' and hasattr(user, 'company'):
             return Employee.objects.filter(company=user.company)
-        return Employee.objects.none()
+        else:
+            return Employee.objects.filler(employee=user.department)
 
     @action(detail=False, methods=['post'])
     def bulk_upload(self, request):
@@ -183,7 +184,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     def search(self, request):
         # Extract query parameters
         name = request.query_params.get('name', '').strip()
-        employer = request.query_params.get('employer', '').strip()
+        employer = request.query_params.get('company', '').strip()
         position = request.query_params.get('position', '').strip()
         department = request.query_params.get('department', '').strip()
         year_started = request.query_params.get('year_started', '').strip()
