@@ -1,0 +1,5 @@
+name,employee_id,position,department,date_of_birth,gender,joining_date,email,phone
+Alice Johnson,EMP001,Engineer,Engineering,1990-05-21,F,2021-02-01,alice.johnson@acme.com,555-1111
+Bob Lee,EMP002,Manager,Sales,1985-08-15,M,2020-06-15,bob.lee@acme.com,555-2222
+Carol Smith,EMP003,Analyst,Finance,1992-11-30,F,2022-01-20,carol.smith@beta.com,555-3333
+David Kim,EMP004,Developer,IT,1988-03-12,M,2019-09-10,david.kim@gamma.com,555-4444
