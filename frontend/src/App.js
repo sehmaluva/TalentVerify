@@ -4,7 +4,7 @@ import { AuthProvider, AuthContext } from './auth/AuthContext';
 import LoginPage from './auth/LoginPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CompanyDashboard from './pages/company/CompanyDashboard';
-import SearchPage from './pages/search/SearchPage';
+import SearchPage from './pages/common/SearchPage';
 import UserManagement from './pages/admin/UserManagement';
 import CompanyManagement from './pages/admin/CompanyManagement';
 //import EmployeeManagent from './pages/admin/EmployeeManagement';

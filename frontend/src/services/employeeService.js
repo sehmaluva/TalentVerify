@@ -22,7 +22,7 @@ export const employeeService = {
   // Get all employees (with optional filters)
   async getEmployees(filters = {}) {
     try {
-      const response = await api.get('/employees/', { params: filters });
+      const response = await api.get('/employees/');
       return response.data;
     } catch (error) {
       if (error.response) {

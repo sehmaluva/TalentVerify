@@ -34,8 +34,12 @@ const EmployeeManagement = () => {
         employeeService.getAllEmployees(),
         companyService.getCompanies()
       ]);
+      console.log('Fetched employees:', employeesData);
+      console.log('Fetched companies:', companiesData);
+      //console.log('Fetched departments:', departmentsData);
       setEmployees(employeesData);
       setCompanies(companiesData);
+      console.log("hello");
     } catch (err) {
       setError('Failed to fetch data');
     } finally {
@@ -347,8 +351,8 @@ const EmployeeManagement = () => {
                       <td>{company ? company.name : 'Unknown'}</td>
                       <td>{employee.department}</td>
                       <td>{employee.position}</td>
-                      <td>{employee.start_date}</td>
-                      <td>{employee.end_date || 'Current'}</td>
+                      <td>{employee.start_dates}</td>
+                      <td>{employee.end_dates || 'Current'}</td>
                       <td className="actions">
                         <button 
                           className="btn-link"

@@ -19,8 +19,8 @@ const CompanyDashboard = () => {
     const fetchCompanyData = async () => {
       try {
         const [company, employeeList] = await Promise.all([
-          companyService.getCompanyById(user.company_id),
-          employeeService.getEmployeesByCompany(user.company_id)
+          companyService.getCompanyById(user.company.Id),
+          employeeService.getEmployeesByCompany(user.company.Id)
         ]);
         
         setCompanyData(company);
@@ -33,7 +33,7 @@ const CompanyDashboard = () => {
     };
 
     fetchCompanyData();
-  }, [user.company_id]);
+  }, [user.company.Id]);
 
   const handleLogout = () => {
     logout();
@@ -113,8 +113,8 @@ const CompanyDashboard = () => {
             <div className="company-overview">
               <h2>Company Overview</h2>
               <div className="company-details">
-                <p><strong>Industry:</strong> {companyData?.industry}</p>
-                <p><strong>Location:</strong> {companyData?.location}</p>
+                <p><strong>Name</strong> {companyData?.name}</p>
+                <p><strong>Address</strong> {companyData?.address}</p>
                 <p><strong>Founded:</strong> {companyData?.founded_year}</p>
                 <p><strong>Website:</strong> {companyData?.website}</p>
               </div>

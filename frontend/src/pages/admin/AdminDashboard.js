@@ -114,7 +114,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <div className="welcome-message">
-                <h2>Welcome to the Admin Dashboard</h2>
+                <h2>Welcome to the Talent Verify Admin Dashboard</h2>
                 <p>Select an option from the navigation menu to get started.</p>
               </div>
             </>
