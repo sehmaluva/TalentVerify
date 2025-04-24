@@ -93,10 +93,10 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(company__name__icontains=employer)
         
         if position:
-            queryset = queryset.filter(roles__contains=[position])
+            queryset = queryset.filter(position__contains=[position])
         
         if department:
-            queryset = queryset.filter(departments__contains=[department])
+            queryset = queryset.filter(department__contains=[department])
         
         if year_started:
             queryset = queryset.filter(start_dates__contains=[f"{year_started}"])
@@ -112,7 +112,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             # Regular users can only see basic public info
             queryset = queryset.filter(
                 Q(company__isnull=False)  # Must have a company
-            ).only('name', 'company', 'departments', 'roles')  # Limited fields
+            ).only('name', 'company', 'department', 'position')  # Limited fields
         
         # Serialize and return results
         serializer = self.get_serializer(queryset, many=True)

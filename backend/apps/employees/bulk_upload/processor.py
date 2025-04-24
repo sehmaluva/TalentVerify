@@ -59,14 +59,14 @@ def process_employee_file(file, company_id):
         for index, row in df.iterrows():
             try:
                 # Convert string lists to actual lists
-                departments = row.get('departments', '[]')
-                roles = row.get('roles', '[]')
+                department = row.get('department', '[]')
+                position = row.get('position', '[]')
                 start_dates = row.get('start_dates', '[]')
                 end_dates = row.get('end_dates', '[]')
                 duties = row.get('duties', '[]')
                 
                 # Parse JSON strings if they're strings
-                for field in [departments, roles, start_dates, end_dates, duties]:
+                for field in [department, position, start_dates, end_dates, duties]:
                     if isinstance(field, str):
                         try:
                             field = json.loads(field)
@@ -95,8 +95,8 @@ def process_employee_file(file, company_id):
                     'company': company_id,
                     'name': row['name'],
                     'employee_id': row['employee_id'],
-                    'departments': departments,
-                    'roles': roles,
+                    'department': department,
+                    'position': position,
                     'start_dates': start_dates,
                     'end_dates': end_dates,
                     'duties': duties

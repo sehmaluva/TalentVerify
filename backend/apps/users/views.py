@@ -16,7 +16,7 @@ class UserRegisterView(generics.CreateAPIView):
     """
     queryset = User.objects.all()
     serializer_class = UserCreateSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     """

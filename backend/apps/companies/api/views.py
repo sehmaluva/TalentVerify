@@ -38,7 +38,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         elif user.role == 'company' and hasattr(user, 'company'):
             return Company.objects.filter(id=user.company.id)
         else:
-            return Company.objects.all().only('name', 'departments')
+            return Company.objects.all().only('name', 'department')
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -56,12 +56,12 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
             for index, row in df.iterrows():
                 try:
-                    departments = row.get('departments', '[]')
-                    if isinstance(departments, str):
+                    department = row.get('department', '[]')
+                    if isinstance(department, str):
                         try:
-                            departments = json.loads(departments)
+                            department = json.loads(department)
                         except json.JSONDecodeError:
-                            departments = [d.strip() for d in re.split(r',|;', departments)]
+                            department = [d.strip() for d in re.split(r',|;', department)]
 
                     registration_date = pd.to_datetime(row['registration_date']).date()
                     company_data = {
@@ -70,7 +70,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
                         'registration_number': str(row['registration_number']),
                         'address': row['address'],
                         'contact_person': row['contact_person'],
-                        'departments': departments,
+                        'department': department,
                         'employee_count': int(row.get('employee_count', 0)),
                         'phone': str(row['phone']),
                         'email': row['email'],
@@ -96,15 +96,15 @@ class CompanyViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
-    def update_departments(self, request, pk=None):
+    def update_department(self, request, pk=None):
         company = self.get_object()
         user = request.user
         if user.role != 'admin' and (not hasattr(user, 'company') or user.company.id != company.id):
             return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
-        departments_text = request.data.get('departments', '')
-        departments = [d.strip() for d in re.split(r'(?:\\n|\n|,|;)+', departments_text) if d.strip()]
-        company.departments = departments
+        department_text = request.data.get('department', '')
+        department = [d.strip() for d in re.split(r'(?:\\n|\n|,|;)+', department_text) if d.strip()]
+        company.department = department
         company.save()
         return Response(self.get_serializer(company).data)
 
@@ -181,27 +181,28 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def search(self, request):
-        query = request.query_params.get('q', '')
-        if not query:
-            return Response({'error': 'Search query is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Extract query parameters
+        name = request.query_params.get('name', '').strip()
+        employer = request.query_params.get('employer', '').strip()
+        position = request.query_params.get('position', '').strip()
+        department = request.query_params.get('department', '').strip()
+        year_started = request.query_params.get('year_started', '').strip()
+        year_left = request.query_params.get('year_left', '').strip()
 
-        user = request.user
-        if user.role == 'admin':
-            employees = Employee.objects.filter(
-                Q(first_name__icontains=query) |
-                Q(last_name__icontains=query) |
-                Q(email__icontains=query) |
-                Q(department__icontains=query)
-            )
-        elif user.role == 'company' and hasattr(user, 'company'):
-            employees = Employee.objects.filter(
-                Q(first_name__icontains=query) |
-                Q(last_name__icontains=query) |
-                Q(email__icontains=query) |
-                Q(department__icontains=query),
-                company=user.company
-            )
-        else:
-            employees = Employee.objects.none()
+        filters = Q()
+        if name:
+            filters &= Q(first_name__icontains=name) | Q(last_name__icontains=name)
+        if employer:
+            filters &= Q(company__name__icontains=employer)
+        if position:
+            filters &= Q(position__icontains=position)
+        if department:
+            filters &= Q(department__icontains=department)
+        if year_started:
+            filters &= Q(joining_date__year=year_started)
+        if year_left:
+            # If you have a 'leaving_date' or equivalent field, use it. Otherwise, skip.
+            filters &= Q(leaving_date__year=year_left)
 
+        employees = Employee.objects.filter(filters)
         return Response(self.get_serializer(employees, many=True).data)

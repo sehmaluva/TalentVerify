@@ -74,12 +74,12 @@ class Employee(models.Model):
             end_date: Date left role (YYYY-MM-DD), optional
             duties: List of duties in role, optional
         """
-        # Add to departments if not already there
-        if department not in self.departments:
-            self.departments.append(department)
+        # Add to department if not already there
+        if department not in self.department:
+            self.department.append(department)
         
-        # Add to roles
-        self.roles.append(role)
+        # Add to position
+        self.position.append(position)
         
         # Add to start dates
         self.start_dates.append(start_date)

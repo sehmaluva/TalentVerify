@@ -12,7 +12,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Employee
-        fields = ['id', 'name', 'employee_id', 'department', 'position', 'company'] 
+        fields = ['id', 'name', 'employee_id', 'position', 'company','department'] 
         read_only_fields = ('created_at', 'updated_at')
     
     def validate_date_of_birth(self, value):
@@ -31,19 +31,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Joining date cannot be in the future")
         return value
     
-    def validate(self, data):
-        """
-        Validate that the employee's department exists in the company's departments.
-        """
-        company = data.get('company')
-        department = data.get('department')
-        
-        if company and department:
-            if department not in company.departments:
-                raise serializers.ValidationError({
-                    'department': f"Department '{department}' does not exist in the company"
-                })
-        return data
+    def get_company_departments(self, obj):
+        if obj.company:
+            # Assumes related_name='department' on Department FK to Company
+            return [dept.name for dept in obj.company.department.all()]
+        return []
+    
+
 
 class CompanySerializer(serializers.ModelSerializer):
     """
@@ -65,14 +59,14 @@ class CompanySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Registration date cannot be in the future")
         return value
     """
-    def validate_departments(self, value):
+    def validate_department(self, value):
         
-        #Validate that departments is a list of strings.
+        #Validate that department is a list of strings.
       
         if not isinstance(value, list):
-            raise serializers.ValidationError("Departments must be a list")
+            raise serializers.ValidationError("department must be a list")
         if not all(isinstance(dept, str) for dept in value):
-            raise serializers.ValidationError("All departments must be strings")
+            raise serializers.ValidationError("All department must be strings")
         return value
 
         """

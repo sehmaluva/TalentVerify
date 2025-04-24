@@ -42,7 +42,7 @@ def process_company_file(file, created_by_user):
         
         # Validate required columns
         required_columns = ['name', 'registration_date', 'registration_number', 'address', 
-                          'contact_person', 'departments', 'employee_count', 'phone', 'email']
+                          'contact_person', 'department', 'employee_count', 'phone', 'email']
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
@@ -52,17 +52,17 @@ def process_company_file(file, created_by_user):
         
         for index, row in df.iterrows():
             try:
-                # Parse departments list
-                departments = row.get('departments', '[]')
-                if isinstance(departments, str):
+                # Parse department list
+                department = row.get('department', '[]')
+                if isinstance(department, str):
                     try:
-                        departments = json.loads(departments)
+                        department = json.loads(department)
                     except json.JSONDecodeError:
                         # Try to parse as comma-separated list
-                        if ',' in departments:
-                            departments = [dept.strip() for dept in departments.split(',')]
+                        if ',' in department:
+                            department = [dept.strip() for dept in department.split(',')]
                         else:
-                            departments = []
+                            department = []
                 
                 # Parse registration date
                 registration_date = row['registration_date']
@@ -83,7 +83,7 @@ def process_company_file(file, created_by_user):
                     'registration_number': str(row['registration_number']),
                     'address': row['address'],
                     'contact_person': row['contact_person'],
-                    'departments': departments,
+                    'department': department,
                     'employee_count': int(row['employee_count']),
                     'phone': str(row['phone']),
                     'email': row['email'],

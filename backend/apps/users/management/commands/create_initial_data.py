@@ -36,7 +36,7 @@ class Command(BaseCommand):
                     'registration_number': 'TV123456',
                     'address': '123 Tech Street, Innovation City',
                     'contact_person': 'John Doe',
-                    'departments': ['HR', 'IT', 'Finance'],
+                    'department': ['HR', 'IT', 'Finance'],
                     'employee_count': 50,
                     'phone': '+1234567890',
                     'email': 'contact@talentverify.com',
