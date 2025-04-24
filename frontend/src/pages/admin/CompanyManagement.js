@@ -15,7 +15,7 @@ const CompanyManagement = () => {
     registration_number: '',
     address: '',
     contact_person: '',
-    departments: '',
+    department: '',
     phone: '',
     email: '',
     createAdmin: false,
@@ -56,15 +56,15 @@ const CompanyManagement = () => {
     setLoading(true);
     setError('');
 
-    // Format departments as array for backend
-    const departmentsArray = formData.departments.split(',').map(dept => dept.trim()).filter(dept => dept);
+    // Format department as array for backend
+    const departmentArray = formData.department.split(',').map(dept => dept.trim()).filter(dept => dept);
     const companyData = {
       name: formData.name,
       registration_date: formData.registration_date,
       registration_number: formData.registration_number,
       address: formData.address,
       contact_person: formData.contact_person,
-      departments: departmentsArray,
+      department: departmentArray,
       phone: formData.phone,
       email: formData.email
     };
@@ -100,7 +100,7 @@ const CompanyManagement = () => {
         registration_number: '',
         address: '',
         contact_person: '',
-        departments: '',
+        department: '',
         phone: '',
         email: '',
         createAdmin: false,
@@ -124,7 +124,7 @@ const CompanyManagement = () => {
       registration_number: company.registration_number || '',
       address: company.address || '',
       contact_person: company.contact_person || '',
-      departments: company.departments ? company.departments.join(', ') : '',
+      department: company.department ? company.department.join(', ') : '',
       phone: company.phone || '',
       email: company.email || '',
       createAdmin: false,
@@ -159,7 +159,7 @@ const CompanyManagement = () => {
         registration_number: '',
         address: '',
         contact_person: '',
-        departments: '',
+        department: '',
         phone: '',
         email: '',
         createAdmin: false,
@@ -278,12 +278,12 @@ const CompanyManagement = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="departments">Departments (comma separated)</label>
+          <label htmlFor="department">department (comma separated)</label>
           <input
             type="text"
-            id="departments"
-            name="departments"
-            value={formData.departments}
+            id="department"
+            name="department"
+            value={formData.department}
             onChange={handleChange}
           />
         </div>

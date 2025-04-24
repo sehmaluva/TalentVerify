@@ -1,8 +1,8 @@
 import React from 'react';
-import './RoleSelect.css';
+import './positionelect.css';
 
 const RoleDropdown = ({ value, onChange }) => {
-  const roles = [
+  const position = [
     { value: 'admin', label: 'Admin' },
     { value: 'company', label: 'Company' },
     { value: 'employee', label: 'Employee' }
@@ -16,7 +16,7 @@ const RoleDropdown = ({ value, onChange }) => {
       required
     >
       <option value="">Select a role</option>
-      {roles.map(role => (
+      {position.map(role => (
         <option key={role.value} value={role.value}>
           {role.label}
         </option>

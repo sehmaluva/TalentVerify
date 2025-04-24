@@ -147,14 +147,14 @@ const SearchPage = () => {
               <div key={index} className="result-card">
                 <h4>{employee.name}</h4>
                 <p><strong>Company:</strong> {employee.company.name}</p>
-                <p><strong>Departments:</strong> {employee.departments.join(', ')}</p>
-                <p><strong>Roles:</strong> {employee.roles.join(', ')}</p>
+                <p><strong>department:</strong> {employee.department.join(', ')}</p>
+                <p><strong>position:</strong> {employee.position.join(', ')}</p>
                 <div className="role-history">
                   <h5>Role History</h5>
-                  {employee.roles.map((role, roleIndex) => (
+                  {employee.position.map((role, roleIndex) => (
                     <div key={roleIndex} className="role-entry">
                       <p><strong>Role:</strong> {role}</p>
-                      <p><strong>Department:</strong> {employee.departments[roleIndex]}</p>
+                      <p><strong>Department:</strong> {employee.department[roleIndex]}</p>
                       <p><strong>Started:</strong> {employee.start_dates[roleIndex]}</p>
                       {employee.end_dates[roleIndex] && (
                         <p><strong>Left:</strong> {employee.end_dates[roleIndex]}</p>

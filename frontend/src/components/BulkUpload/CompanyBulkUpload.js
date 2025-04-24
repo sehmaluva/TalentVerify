@@ -65,7 +65,7 @@ const CompanyBulkUpload = () => {
       'registration_number',
       'address',
       'contact_person',
-      'departments',
+      'department',
       'employee_count',
       'phone',
       'email'

@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
-import { ROLES } from '../config';
+import { position } from '../config';
 import '../styles/Auth.css';
 
 const LoginPage = () => {
@@ -23,8 +23,8 @@ const LoginPage = () => {
   // Handle navigation after authentication
   useEffect(() => {
     if (isAuthenticated && user) {
-      const redirectPath = user.role === ROLES.ADMIN ? '/admin' : 
-                         user.role === ROLES.COMPANY ? '/company' : 
+      const redirectPath = user.role === position.ADMIN ? '/admin' : 
+                         user.role === position.COMPANY ? '/company' : 
                          '/search';
       
       // Use requestAnimationFrame to ensure navigation happens in the next frame

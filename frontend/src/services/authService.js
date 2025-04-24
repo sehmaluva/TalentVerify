@@ -55,7 +55,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
+export { api };
 export const authService = {
   login: async (username, password, role, company) => {
     try {

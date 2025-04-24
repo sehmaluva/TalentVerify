@@ -13,14 +13,14 @@ import './App.css';
 import EmployeeManagement from './pages/admin/EmployeeManagement';
 
 // Protected Route component
-const ProtectedRoute = ({ children, allowedRoles }) => {
+const ProtectedRoute = ({ children, allowedposition }) => {
   const { user, isAuthenticated } = useContext(AuthContext);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowedposition && !allowedposition.includes(user.role)) {
     return <Navigate to="/login" replace />;
   }
 
@@ -38,7 +38,7 @@ const RootRedirect = () => {
   if (user.role === 'admin') {
     return <Navigate to="/admin" replace />;
   } else if (user.role === 'company') {
-    return <Navigate to="/company" replace />;
+    return <Navigate to="/company/${user.companyId}" replace />;
   } else {
     return <Navigate to="/search" replace />;
   }
@@ -58,7 +58,7 @@ function App() {
             <Route
               path="/admin/*"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedposition={['admin']}>
                   <AdminDashboard />
                 </ProtectedRoute>
               }
@@ -66,7 +66,7 @@ function App() {
             <Route
               path="/admin/users"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedposition={['admin']}>
                   <UserManagement />
                 </ProtectedRoute>
               }
@@ -74,7 +74,7 @@ function App() {
             <Route
               path="/admin/companies"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedposition={['admin']}>
                   <CompanyManagement />
                 </ProtectedRoute>
               }
@@ -82,7 +82,7 @@ function App() {
             <Route
               path="/admin/employees"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedposition={['admin']}>
                   <EmployeeManagement/>
                 </ProtectedRoute>
               }
@@ -92,7 +92,7 @@ function App() {
             <Route
               path="/company"
               element={
-                <ProtectedRoute allowedRoles={['company']}>
+                <ProtectedRoute allowedposition={['company']}>
                   <CompanyDashboard />
                 </ProtectedRoute>
               }
@@ -102,7 +102,7 @@ function App() {
             <Route
               path="/search"
               element={
-                <ProtectedRoute allowedRoles={['employee']}>
+                <ProtectedRoute allowedposition={['employee', 'company', 'admin']}>
                   <SearchPage />
                 </ProtectedRoute>
               }

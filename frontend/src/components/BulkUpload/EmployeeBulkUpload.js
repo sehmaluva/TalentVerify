@@ -69,8 +69,8 @@ const EmployeeBulkUpload = () => {
     const headers = [
       'name',
       'employee_id',
-      'departments',
-      'roles',
+      'department',
+      'position',
       'start_dates',
       'end_dates',
       'duties'
@@ -104,8 +104,8 @@ const EmployeeBulkUpload = () => {
         <div className="template-info">
           <h4>Template Format:</h4>
           <ul>
-            <li>departments: JSON array of department names</li>
-            <li>roles: JSON array of role titles</li>
+            <li>department: JSON array of department names</li>
+            <li>position: JSON array of role titles</li>
             <li>start_dates: JSON array of start dates (YYYY-MM-DD)</li>
             <li>end_dates: JSON array of end dates (YYYY-MM-DD or empty)</li>
             <li>duties: JSON array of duties lists</li>

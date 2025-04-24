@@ -1,24 +1,11 @@
-import axios from 'axios';
-import { API_URL } from '../config';
-
-const axiosInstance = axios.create({
-  baseURL: API_URL,
-});
-
-// Add token to requests if it exists
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import { api } from './authService';
 
 export const employeeService = {
   // Bulk upload employees
   async bulkUpload(formData) {
     try {
-      const response = await axiosInstance.post('/employees/bulk-upload', formData, {
+      // Use the correct backend endpoint: /employees/bulk_upload
+      const response = await api.post('/employees/bulk_upload/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -35,7 +22,7 @@ export const employeeService = {
   // Get all employees (with optional filters)
   async getEmployees(filters = {}) {
     try {
-      const response = await axiosInstance.get('/employees', { params: filters });
+      const response = await api.get('/employees/', { params: filters });
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -48,7 +35,7 @@ export const employeeService = {
   // Get employee by ID
   async getEmployeeById(id) {
     try {
-      const response = await axiosInstance.get(`/employees/${id}`);
+      const response = await api.get(`/employees/${id}/`);
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -61,7 +48,7 @@ export const employeeService = {
   // Create new employee
   async createEmployee(employeeData) {
     try {
-      const response = await axiosInstance.post('/employees', employeeData);
+      const response = await api.post('/employees/', employeeData);
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -74,7 +61,7 @@ export const employeeService = {
   // Update employee
   async updateEmployee(id, employeeData) {
     try {
-      const response = await axiosInstance.put(`/employees/${id}`, employeeData);
+      const response = await api.put(`/employees/${id}/`, employeeData);
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -87,7 +74,7 @@ export const employeeService = {
   // Delete employee
   async deleteEmployee(id) {
     try {
-      const response = await axiosInstance.delete(`/employees/${id}`);
+      const response = await api.delete(`/employees/${id}/`);
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -100,7 +87,7 @@ export const employeeService = {
   // Search employees
   async searchEmployees(searchQuery) {
     try {
-      const response = await axiosInstance.get('/employees/search', {
+      const response = await api.get('/employees/search/', {
         params: { query: searchQuery }
       });
       return response.data;
@@ -115,7 +102,7 @@ export const employeeService = {
   // Get employees by company
   async getEmployeesByCompany(companyId) {
     try {
-      const response = await axiosInstance.get(`/employees`, {
+      const response = await api.get(`/employees/`, {
         params: { company: companyId }
       });
       return response.data;
@@ -130,7 +117,7 @@ export const employeeService = {
   // Verify employment
   async verifyEmployment(employeeId) {
     try {
-      const response = await axiosInstance.post(`/employees/${employeeId}/verify`);
+      const response = await api.post(`/employees/${employeeId}/verify/`);
       return response.data;
     } catch (error) {
       if (error.response) {
