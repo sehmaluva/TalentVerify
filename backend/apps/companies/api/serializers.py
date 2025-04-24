@@ -12,7 +12,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Employee
-        fields = '__all__'
+        fields = ['id', 'name', 'employee_id', 'department', 'position', 'company'] 
         read_only_fields = ('created_at', 'updated_at')
     
     def validate_date_of_birth(self, value):
@@ -64,16 +64,18 @@ class CompanySerializer(serializers.ModelSerializer):
         if value > datetime.now().date():
             raise serializers.ValidationError("Registration date cannot be in the future")
         return value
-    
+    """
     def validate_departments(self, value):
-        """
-        Validate that departments is a list of strings.
-        """
+        
+        #Validate that departments is a list of strings.
+      
         if not isinstance(value, list):
             raise serializers.ValidationError("Departments must be a list")
         if not all(isinstance(dept, str) for dept in value):
             raise serializers.ValidationError("All departments must be strings")
         return value
+
+        """
 
 class CompanyBulkUploadSerializer(serializers.Serializer):
     """
