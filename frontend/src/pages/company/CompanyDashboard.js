@@ -4,11 +4,11 @@ import { AuthContext } from '../../auth/AuthContext';
 import { companyService } from '../../services/companyService';
 import { employeeService } from '../../services/employeeService';
 import DataUpload from '../../components/DataUpload/DataUpload';
+import EmployeeBulkUpload from '../../components/BulkUpload/EmployeeBulkUpload';
 import '../../styles/Dashboard.css';
 
 const CompanyDashboard = () => {
   const [companyData, setCompanyData] = useState(null);
-  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -18,22 +18,22 @@ const CompanyDashboard = () => {
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
-        const [company, employeeList] = await Promise.all([
-          companyService.getCompanyById(user.company.Id),
-          employeeService.getEmployeesByCompany(user.company.Id)
-        ]);
-        
+        const companyId = user.company?.id || user.company?.Id;
+        if (!companyId) {
+          setError('No company ID found for this user.');
+          setLoading(false);
+          return;
+        }
+        const company = await companyService.getCompanyById(companyId);
         setCompanyData(company);
-        setEmployees(employeeList);
       } catch (err) {
         setError('Failed to fetch company data');
       } finally {
         setLoading(false);
       }
     };
-
     fetchCompanyData();
-  }, [user.company.Id]);
+  }, [user.company]);
 
   const handleLogout = () => {
     logout();
@@ -42,10 +42,14 @@ const CompanyDashboard = () => {
 
   const handleBulkUpload = async (file) => {
     try {
-      await employeeService.bulkUpload(file, user.company_id);
-      // Refresh employees data after upload
-      const employeesData = await employeeService.getEmployeesByCompany(user.company_id);
-      setEmployees(employeesData);
+      const companyId = companyData?.id || companyData?.Id;
+      if (!companyId) {
+        setError('No company ID found for upload.');
+        return;
+      }
+      await employeeService.bulkUpload(file, companyId);
+      const updatedCompany = await companyService.getCompanyById(companyId);
+      setCompanyData(updatedCompany);
     } catch (err) {
       setError('Failed to upload employees');
       console.error('Error uploading employees:', err);
@@ -54,7 +58,12 @@ const CompanyDashboard = () => {
 
   const handleCompanyUpdate = async (updatedData) => {
     try {
-      const updatedCompany = await companyService.updateCompany(user.company_id, updatedData);
+      const companyId = companyData?.id || companyData?.Id;
+      if (!companyId) {
+        setError('No company ID found for update.');
+        return;
+      }
+      const updatedCompany = await companyService.updateCompany(companyId, updatedData);
       setCompanyData(updatedCompany);
     } catch (err) {
       setError('Failed to update company');
@@ -62,8 +71,26 @@ const CompanyDashboard = () => {
     }
   };
 
+  // Modal state for add/edit employee and edit company
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
+  const [showEditEmployee, setShowEditEmployee] = useState(false);
+  const [editEmployeeData, setEditEmployeeData] = useState(null);
+  const [showEditCompany, setShowEditCompany] = useState(false);
+
+  // Handler stubs (to be implemented)
+  const handleAddEmployee = () => setShowAddEmployee(true);
+  const handleEditEmployee = (employee) => {
+    setEditEmployeeData(employee);
+    setShowEditEmployee(true);
+  };
+  const handleEditCompany = () => setShowEditCompany(true);
+
   if (loading) {
     return <div className="loading">Loading dashboard...</div>;
+  }
+
+  if (!companyData) {
+    return <div className="error-message">No company data available.</div>;
   }
 
   return (
@@ -77,6 +104,20 @@ const CompanyDashboard = () => {
               Logout
             </button>
           </div>
+        </div>
+        <div className="company-navbar-overview">
+          <p><strong>Address:</strong> {companyData?.address}</p>
+          <p><strong>Registration Date:</strong> {companyData?.registration_date}</p>
+          <p><strong>Employee Count:</strong> {companyData?.employee_count}</p>
+          {companyData?.created_at && (
+            <p><strong>Created At:</strong> {companyData.created_at}</p>
+          )}
+          {companyData?.updated_at && (
+            <p><strong>Updated At:</strong> {companyData.updated_at}</p>
+          )}
+          {companyData?.created_by && (
+            <p><strong>Created By:</strong> {companyData.created_by}</p>
+          )}
         </div>
         <div className="nav-links">
           <Link to="/company" className="nav-link">Overview</Link>
@@ -92,45 +133,33 @@ const CompanyDashboard = () => {
         <div className="stats-grid">
           <div className="stat-card">
             <h3>Total Employees</h3>
-            <p className="stat-number">{employees.length}</p>
+            <p className="stat-number">{companyData.employee_count || (companyData.employees ? companyData.employees.length : 0)}</p>
           </div>
           <div className="stat-card">
             <h3>Active Verifications</h3>
             <p className="stat-number">
-              {employees.filter(emp => emp.verification_status === 'pending').length}
+              {companyData.employees ? companyData.employees.filter(emp => emp.verification_status === 'pending').length : 0}
             </p>
           </div>
           <div className="stat-card">
             <h3>Verified Employees</h3>
             <p className="stat-number">
-              {employees.filter(emp => emp.verification_status === 'verified').length}
+              {companyData.employees ? companyData.employees.filter(emp => emp.verification_status === 'verified').length : 0}
             </p>
           </div>
         </div>
 
         <Routes>
-          <Route path="/" element={
-            <div className="company-overview">
-              <h2>Company Overview</h2>
-              <div className="company-details">
-                <p><strong>Name</strong> {companyData?.name}</p>
-                <p><strong>Address</strong> {companyData?.address}</p>
-                <p><strong>Founded:</strong> {companyData?.founded_year}</p>
-                <p><strong>Website:</strong> {companyData?.website}</p>
-              </div>
-            </div>
-          } />
           <Route path="/employees" element={
             <div className="employees-section">
               <div className="section-header">
                 <h2>Employees</h2>
                 <div className="header-actions">
-                  <Link to="/company/employees/create" className="btn-primary">Add Employee</Link>
-                  <DataUpload 
-                    onUpload={handleBulkUpload}
-                    accept=".csv,.xlsx"
-                    label="Upload Employees"
-                  />
+                  <button className="btn-primary" onClick={handleAddEmployee}>Add Employee</button>
+                  <EmployeeBulkUpload onUpload={handleBulkUpload} />
+                  {user.role === 'admin' && (
+                    <button className="btn-secondary" onClick={handleEditCompany}>Edit Company Info</button>
+                  )}
                 </div>
               </div>
               <div className="data-table">
@@ -145,21 +174,30 @@ const CompanyDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {employees.map(employee => (
+                    {companyData.employees && companyData.employees.map(employee => (
                       <tr key={employee.id}>
                         <td>{employee.name}</td>
                         <td>{employee.position}</td>
                         <td>{employee.department}</td>
-                        <td>{employee.status}</td>
+                        <td>{employee.status || employee.verification_status}</td>
                         <td>
-                          <Link to={`/company/employees/${employee.id}`} className="btn-link">View</Link>
-                          <Link to={`/company/employees/${employee.id}/edit`} className="btn-link">Edit</Link>
+                          <button className="btn-link" onClick={() => handleEditEmployee(employee)}>Edit</button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              {/* Modals for add/edit employee and edit company info (to be implemented) */}
+              {showAddEmployee && (
+                <div className="modal">Add Employee Modal (to implement)</div>
+              )}
+              {showEditEmployee && (
+                <div className="modal">Edit Employee Modal (to implement)</div>
+              )}
+              {showEditCompany && (
+                <div className="modal">Edit Company Modal (to implement)</div>
+              )}
             </div>
           } />
           <Route path="/verifications" element={<div>Verification management coming soon</div>} />
@@ -170,4 +208,4 @@ const CompanyDashboard = () => {
   );
 };
 
-export default CompanyDashboard; 
+export default CompanyDashboard;
