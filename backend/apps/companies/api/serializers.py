@@ -3,7 +3,7 @@ Serializers for the companies app.
 """
 
 from rest_framework import serializers
-from ..models import Company, Employee
+from ..models import Company, Employee , Department
 from datetime import datetime
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -51,6 +51,9 @@ class CompanySerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('created_by', 'created_at', 'updated_at', 'employee_count')
     
+    def get_departments(self, obj):
+        return [dept.name for dept in obj.department.all()]
+
     def validate_registration_date(self, value):
         """
         Validate that the registration date is not in the future.
@@ -70,6 +73,26 @@ class CompanySerializer(serializers.ModelSerializer):
         return value
 
         """
+class DepartmentSerializer(serializers.ModelSerializer):
+    total_employees = serializers.SerializerMethodField()
+    employees = serializers.SerializerMethodField()
+    company_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Department
+        fields = ['id', 'name', 'company', 'company_name', 'description', 'total_employees', 'employees']
+
+    def get_total_employees(self, obj):
+        return obj.get_total_employees()
+
+    def get_employees(self, obj):
+        # Only include active employees in this department
+        employees = Employee.objects.filter(department=obj, is_active=True)
+        return EmployeeSerializer(employees, many=True).data
+
+    def get_company_name(self, obj):
+        return obj.company.name if obj.company else None
+
 
 class CompanyBulkUploadSerializer(serializers.Serializer):
     """

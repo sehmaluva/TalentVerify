@@ -4,7 +4,6 @@ import { AuthContext } from '../../auth/AuthContext';
 import { companyService } from '../../services/companyService';
 import { employeeService } from '../../services/employeeService';
 import DataUpload from '../../components/DataUpload/DataUpload';
-import EmployeeBulkUpload from '../../components/BulkUpload/EmployeeBulkUpload';
 import '../../styles/Dashboard.css';
 
 const CompanyDashboard = () => {
@@ -70,20 +69,6 @@ const CompanyDashboard = () => {
       console.error('Error updating company:', err);
     }
   };
-
-  // Modal state for add/edit employee and edit company
-  const [showAddEmployee, setShowAddEmployee] = useState(false);
-  const [showEditEmployee, setShowEditEmployee] = useState(false);
-  const [editEmployeeData, setEditEmployeeData] = useState(null);
-  const [showEditCompany, setShowEditCompany] = useState(false);
-
-  // Handler stubs (to be implemented)
-  const handleAddEmployee = () => setShowAddEmployee(true);
-  const handleEditEmployee = (employee) => {
-    setEditEmployeeData(employee);
-    setShowEditEmployee(true);
-  };
-  const handleEditCompany = () => setShowEditCompany(true);
 
   if (loading) {
     return <div className="loading">Loading dashboard...</div>;
@@ -155,11 +140,12 @@ const CompanyDashboard = () => {
               <div className="section-header">
                 <h2>Employees</h2>
                 <div className="header-actions">
-                  <button className="btn-primary" onClick={handleAddEmployee}>Add Employee</button>
-                  <EmployeeBulkUpload onUpload={handleBulkUpload} />
-                  {user.role === 'admin' && (
-                    <button className="btn-secondary" onClick={handleEditCompany}>Edit Company Info</button>
-                  )}
+                  <Link to="/company/employees/create" className="btn-primary">Add Employee</Link>
+                  <DataUpload 
+                    onUpload={handleBulkUpload}
+                    accept=".csv,.xlsx"
+                    label="Upload Employees"
+                  />
                 </div>
               </div>
               <div className="data-table">
@@ -181,23 +167,14 @@ const CompanyDashboard = () => {
                         <td>{employee.department}</td>
                         <td>{employee.status || employee.verification_status}</td>
                         <td>
-                          <button className="btn-link" onClick={() => handleEditEmployee(employee)}>Edit</button>
+                          <Link to={`/company/employees/${employee.id}`} className="btn-link">View</Link>
+                          <Link to={`/company/employees/${employee.id}/edit`} className="btn-link">Edit</Link>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              {/* Modals for add/edit employee and edit company info (to be implemented) */}
-              {showAddEmployee && (
-                <div className="modal">Add Employee Modal (to implement)</div>
-              )}
-              {showEditEmployee && (
-                <div className="modal">Edit Employee Modal (to implement)</div>
-              )}
-              {showEditCompany && (
-                <div className="modal">Edit Company Modal (to implement)</div>
-              )}
             </div>
           } />
           <Route path="/verifications" element={<div>Verification management coming soon</div>} />

@@ -4,7 +4,7 @@ Models for the employees app.
 
 from django.db import models
 from django.conf import settings
-from apps.companies.models import Company
+from apps.companies.models import Company,Department
 from cryptography.fernet import Fernet
 import json
 
@@ -19,7 +19,7 @@ class Employee(models.Model):
     )
     name = models.CharField(max_length=255)
     employee_id = models.CharField(max_length=100, unique=True)
-    department = models.CharField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
     position = models.CharField(max_length=100)
     start_dates = models.DateField()
     end_dates = models.DateField()

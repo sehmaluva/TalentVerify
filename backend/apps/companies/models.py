@@ -16,7 +16,7 @@ class Company(models.Model):
     address = models.TextField()
     contact_person = models.CharField(max_length=255)
     # Consider removing this if using Department model instead:
-    #department = models.TextField(blank=True, default="[]")
+    departments = models.TextField(blank=True, default="[]")
     employee_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     phone = models.CharField(max_length=20)
     email = models.EmailField()

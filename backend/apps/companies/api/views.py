@@ -7,10 +7,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser
 from django.db.models import Q
-from ..models import Company, Employee
+from ..models import Company, Employee, Department
 from ..api.serializers import (
     CompanySerializer, EmployeeSerializer,
-    CompanyBulkUploadSerializer, EmployeeBulkUploadSerializer
+    CompanyBulkUploadSerializer, EmployeeBulkUploadSerializer,DepartmentSerializer
 )
 from .permissions import IsAdminRole
 import pandas as pd
@@ -42,6 +42,22 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    def _create_departments(self, company, departments_text):
+        if not departments_text:
+            return
+        # Delete existing departments
+        #company.department_set.all().delete()
+        # Support splitting by literal '\n', real newlines, commas, or semicolons
+        import re
+        departments = [d.strip() for d in re.split(r'(?:\\n|\n|,|;)+', departments_text) if d.strip()]
+        #departments = [d.strip() for d in departments_text.split('\n') if d.strip()]
+        existing_departments = {dept.name: dept for dept in company.department_set.all()}
+        for dept_name in departments:
+            Department.objects.create(
+                company=company,
+                name=dept_name
+            )
 
     @action(detail=False, methods=['post'])
     def bulk_upload(self, request):
@@ -207,3 +223,22 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
         employees = Employee.objects.filter(filters)
         return Response(self.get_serializer(employees, many=True).data)
+
+class DepartmentViewSet(viewsets.ModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+
+    def get_queryset(self):
+        queryset = Department.objects.all()
+        company_id = self.request.query_params.get('company', None)
+        if company_id:
+            queryset = queryset.filter(company_id=company_id)
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        query = request.query_params.get('q', '')
+        company_id = request.query_params.get('company')
+        departments = Department.search(query, company_id)
+        serializer = self.get_serializer(departments, many=True)
+        return Response(serializer.data)

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { companyService } from '../../services/companyService';
 import {userService} from '../../services/userService';
+import { useNavigate } from 'react-router-dom';
 import DataUpload from '../../components/DataUpload/DataUpload';
 import '../../styles/CompanyManagement.css';
 
 const CompanyManagement = () => {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,7 +17,7 @@ const CompanyManagement = () => {
     registration_number: '',
     address: '',
     contact_person: '',
-    department: '',
+    departments: [''],
     phone: '',
     email: '',
     createAdmin: false,
@@ -50,21 +52,41 @@ const CompanyManagement = () => {
     }));
   };
 
+  const handleDepartmentChange = (index, value) => {
+    setFormData(prev => {
+      const updated = [...prev.departments];
+      updated[index] = value;
+      return { ...prev, departments: updated };
+    });
+  };
+
+  const handleAddDepartment = () => {
+    setFormData(prev => ({ ...prev, departments: [...prev.departments, ''] }));
+  };
+
+  const handleRemoveDepartment = (index) => {
+    setFormData(prev => {
+      const updated = [...prev.departments];
+      updated.splice(index, 1);
+      return { ...prev, departments: updated };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log('Submitting company data:', formData);
     setLoading(true);
     setError('');
 
-    // Format department as array for backend
-    const departmentArray = formData.department.split(',').map(dept => dept.trim()).filter(dept => dept);
+    // Use departments array for backend
+    const departmentsArray = formData.departments.filter(dept => dept.trim());
     const companyData = {
       name: formData.name,
       registration_date: formData.registration_date,
       registration_number: formData.registration_number,
       address: formData.address,
       contact_person: formData.contact_person,
-      department: departmentArray,
+      departments: departmentsArray,
       phone: formData.phone,
       email: formData.email
     };
@@ -100,7 +122,7 @@ const CompanyManagement = () => {
         registration_number: '',
         address: '',
         contact_person: '',
-        department: '',
+        departments: [''],
         phone: '',
         email: '',
         createAdmin: false,
@@ -124,7 +146,7 @@ const CompanyManagement = () => {
       registration_number: company.registration_number || '',
       address: company.address || '',
       contact_person: company.contact_person || '',
-      department: company.department ? company.department.join(', ') : '',
+      departments: Array.isArray(company.departments) ? company.departments : (company.department ? company.department : ['']),
       phone: company.phone || '',
       email: company.email || '',
       createAdmin: false,
@@ -155,17 +177,17 @@ const CompanyManagement = () => {
     setShowForm(false);
     setFormData({
       name: '',
-        registration_date: '',
-        registration_number: '',
-        address: '',
-        contact_person: '',
-        department: '',
-        phone: '',
-        email: '',
-        createAdmin: false,
-        adminUsername: '',
-        adminPassword: '',
-        adminEmail: ''
+      registration_date: '',
+      registration_number: '',
+      address: '',
+      contact_person: '',
+      departments: [''],
+      phone: '',
+      email: '',
+      createAdmin: false,
+      adminUsername: '',
+      adminPassword: '',
+      adminEmail: ''
     });
     setEditingCompany(null);
   };
@@ -211,213 +233,237 @@ const CompanyManagement = () => {
         </div>
       </div>
 
-    {error && <div className="error-message">{error}</div>}
+      {error && <div className="error-message">{error}</div>}
 
-  {showForm ? (
-    <div className="form-container">
-      <form onSubmit={handleSubmit} className="company-form">
-        {/* Company Information Fields */}
-        <div className="form-group">
-          <label htmlFor="name">Company Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="registration_date">Registration Date</label>
-          <input
-            type="date"
-            id="registration_date"
-            name="registration_date"
-            value={formData.registration_date}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="registration_number">Registration Number</label>
-          <input
-            type="text"
-            id="registration_number"
-            name="registration_number"
-            value={formData.registration_number}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="address">Address</label>
-          <input
-            type="text"
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="contact_person">Contact Person</label>
-          <input
-            type="text"
-            id="contact_person"
-            name="contact_person"
-            value={formData.contact_person}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="department">department (comma separated)</label>
-          <input
-            type="text"
-            id="department"
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="phone">Phone</label>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        {/* Admin Creation Section */}
-        <div className="form-group checkbox-group">
-          <label>
-            <input
-              type="checkbox"
-              name="createAdmin"
-              checked={formData.createAdmin}
-              onChange={handleChange}
-            />
-            Create Admin User
-          </label>
-        </div>
-
-        {formData.createAdmin && (
-          <>
+      {showForm ? (
+        <div className="form-container">
+          <form onSubmit={handleSubmit} className="company-form">
+            {/* Company Information Fields */}
             <div className="form-group">
-              <label htmlFor="adminUsername">Admin Username</label>
+              <label htmlFor="name">Company Name</label>
               <input
                 type="text"
-                id="adminUsername"
-                name="adminUsername"
-                value={formData.adminUsername}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                required={formData.createAdmin}
+                required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="adminPassword">Admin Password</label>
+              <label htmlFor="registration_date">Registration Date</label>
               <input
-                type="password"
-                id="adminPassword"
-                name="adminPassword"
-                value={formData.adminPassword}
+                type="date"
+                id="registration_date"
+                name="registration_date"
+                value={formData.registration_date}
                 onChange={handleChange}
-                required={formData.createAdmin}
+                required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="adminEmail">Admin Email</label>
+              <label htmlFor="registration_number">Registration Number</label>
+              <input
+                type="text"
+                id="registration_number"
+                name="registration_number"
+                value={formData.registration_number}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address">Address</label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="contact_person">Contact Person</label>
+              <input
+                type="text"
+                id="contact_person"
+                name="contact_person"
+                value={formData.contact_person}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Departments</label>
+              {formData.departments.map((dept, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                  <input
+                    type="text"
+                    name={`department_${idx}`}
+                    value={dept}
+                    onChange={e => handleDepartmentChange(idx, e.target.value)}
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  {formData.departments.length > 1 && (
+                    <button type="button" style={{ marginLeft: 8 }} onClick={() => handleRemoveDepartment(idx)}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button type="button" onClick={handleAddDepartment} style={{ marginTop: 6 }}>
+                Add Department
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phone">Phone</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
               <input
                 type="email"
-                id="adminEmail"
-                name="adminEmail"
-                value={formData.adminEmail}
+                id="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                required={formData.createAdmin}
+                required
               />
             </div>
-          </>
-        )}
 
-        <div className="form-actions">
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Saving...' : (editingCompany ? 'Update' : 'Create')}
-          </button>
-          <button 
-            type="button" 
-            className="btn-secondary"
-            onClick={handleCancel}
-            disabled={loading}
-          >
-            Cancel
-          </button>
+            {/* Admin Creation Section */}
+            <div className="form-group checkbox-group">
+              <label>
+                <input
+                  type="checkbox"
+                  name="createAdmin"
+                  checked={formData.createAdmin}
+                  onChange={handleChange}
+                />
+                Create Admin User
+              </label>
+            </div>
+
+            {formData.createAdmin && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="adminUsername">Admin Username</label>
+                  <input
+                    type="text"
+                    id="adminUsername"
+                    name="adminUsername"
+                    value={formData.adminUsername}
+                    onChange={handleChange}
+                    required={formData.createAdmin}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="adminPassword">Admin Password</label>
+                  <input
+                    type="password"
+                    id="adminPassword"
+                    name="adminPassword"
+                    value={formData.adminPassword}
+                    onChange={handleChange}
+                    required={formData.createAdmin}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="adminEmail">Admin Email</label>
+                  <input
+                    type="email"
+                    id="adminEmail"
+                    name="adminEmail"
+                    value={formData.adminEmail}
+                    onChange={handleChange}
+                    required={formData.createAdmin}
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Saving...' : (editingCompany ? 'Update' : 'Create')}
+              </button>
+              <button 
+                type="button" 
+                className="btn-secondary"
+                onClick={handleCancel}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      ) : (
+        <div className="data-table">
+          <table>
+            <thead>
+              <tr>
+                <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Address</th>
+                <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Employees</th>
+                <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Departments</th>
+                <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {companies.map(company => (
+                <tr key={company.id}>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">
+                    <span
+                      className="company-link hover:underline text-blue-600 cursor-pointer"
+                      onClick={() => navigate(`/company/${company.id}`)}
+                    >
+                      {company.name}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.address}</td>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.email}</td>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.employee_count ?? (company.employees ? company.employees.length : 0)}</td>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.departments ? company.departments.length : (company.department ? company.department.length : 0)}</td>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">
+                    <button 
+                      className="btn-secondary"
+                      onClick={() => handleEdit(company)}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      className="btn-danger"
+                      onClick={() => handleDelete(company.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
-    ) : (
-    <div className="data-table">
-      <table>
-        <thead>
-          <tr>
-            <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-            <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Industry</th>
-            <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
-            <th className="px-4 py-2 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {companies.map(company => (
-            <tr key={company.id}>
-              <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.name}</td>
-              <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.industry}</td>
-              <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.location}</td>
-              <td className="px-4 py-2 border-b border-gray-200 text-sm">
-                <button 
-                  className="btn-secondary"
-                  onClick={() => handleEdit(company)}
-                >
-                  Edit
-                </button>
-                <button 
-                  className="btn-danger"
-                  onClick={() => handleDelete(company.id)}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )}
-  </div>
   );
 };
 
