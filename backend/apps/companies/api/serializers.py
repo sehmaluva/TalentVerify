@@ -4,14 +4,35 @@ Serializers for the companies app.
 
 from rest_framework import serializers
 from ..models import Company, Employee , Department
+from apps.employees.models import EmployeeHistory
 from datetime import datetime
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    #total_employees = serializers.SerializerMethodField()
+    employees = serializers.SerializerMethodField()
+    company_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Department
+        fields = ['id', 'name', 'company', 'company_name', 'employees']
+
+    def get_total_employees(self, obj):
+        return obj.get_total_employees()
+
+    def get_employees(self, obj):
+        # Only include active employees in this department
+        employees = Employee.objects.filter(department=obj, is_active=True)
+        return EmployeeSerializer(employees, many=True).data
+
+    def get_company_name(self, obj):
+        return obj.company.name if obj.company else None
 
 class EmployeeSerializer(serializers.ModelSerializer):
     """
     Serializer for the Employee model.
     """
     class Meta:
-        model = Employee
+        model = EmployeeHistory
         fields = ['id', 'name', 'employee_id', 'position', 'company','department'] 
         read_only_fields = ('created_at', 'updated_at')
     
@@ -73,25 +94,6 @@ class CompanySerializer(serializers.ModelSerializer):
         return value
 
         """
-class DepartmentSerializer(serializers.ModelSerializer):
-    total_employees = serializers.SerializerMethodField()
-    employees = serializers.SerializerMethodField()
-    company_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Department
-        fields = ['id', 'name', 'company', 'company_name', 'description', 'total_employees', 'employees']
-
-    def get_total_employees(self, obj):
-        return obj.get_total_employees()
-
-    def get_employees(self, obj):
-        # Only include active employees in this department
-        employees = Employee.objects.filter(department=obj, is_active=True)
-        return EmployeeSerializer(employees, many=True).data
-
-    def get_company_name(self, obj):
-        return obj.company.name if obj.company else None
 
 
 class CompanyBulkUploadSerializer(serializers.Serializer):

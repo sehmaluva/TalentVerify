@@ -12,6 +12,7 @@ from ..api.serializers import (
     CompanySerializer, EmployeeSerializer,
     CompanyBulkUploadSerializer, EmployeeBulkUploadSerializer,DepartmentSerializer
 )
+from apps.employees.models import EmployeeHistory
 from .permissions import IsAdminRole
 import pandas as pd
 import json
@@ -137,6 +138,60 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update', 'destroy', 'bulk_upload']:
             return [IsAdminRole()]
         return [permissions.IsAuthenticated()]
+    
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            return Response(
+                {'message': f'Error creating employee: {str(e)}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # This thing need to be posted to employee app
+    def perform_create(self, serializer):
+        employee = serializer.save()
+        # Create initial history entry
+        EmployeeHistory.objects.create(
+            employee=employee.name,
+            company=employee.company,
+            department=employee.department,
+            position=employee.position,
+            start_date=employee.start_date,
+            duties=employee.duties,
+            is_current=True
+        )
+    
+    def perform_update(self, serializer):
+        from datetime import datetime
+        old_data = Employee.objects.get(pk=serializer.instance.pk)
+        employee = serializer.save()
+
+        # If company or department changed, update history
+        if (old_data.company != employee.company or \
+            old_data.department != employee.department or \
+            old_data.position != employee.position):
+
+            # Close old history entry
+            current_history = EmployeeHistory.objects.filter(
+                employee=employee,
+                is_current=True
+            ).first()
+
+            if current_history:
+                current_history.end_date = datetime.now().date()
+                current_history.is_current = False
+                current_history.save()
+
+            # Create new history entry
+            EmployeeHistory.objects.create(
+                employee=employee,
+                company=employee.company,
+                department=employee.department,
+                position=employee.position,
+                start_date=datetime.now().date(),
+                duties=employee.duties,
+                is_current=True
+            )
 
     def get_queryset(self):
         user = self.request.user
@@ -145,7 +200,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         elif user.role == 'company' and hasattr(user, 'company'):
             return Employee.objects.filter(company=user.company)
         else:
-            return Employee.objects.filler(employee=user.department)
+            return Employee.objects.filter(employee=user.company)
 
     @action(detail=False, methods=['post'])
     def bulk_upload(self, request):

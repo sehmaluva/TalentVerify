@@ -37,7 +37,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             # Regular users can only search, handled in search action
             return Employee.objects.none()
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post', 'patch'])
     def bulk_upload(self, request):
         """
         Handle bulk upload of employee data.

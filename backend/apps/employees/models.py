@@ -5,21 +5,17 @@ Models for the employees app.
 from django.db import models
 from django.conf import settings
 from apps.companies.models import Company,Department
+from apps.companies.models import Employee
 from cryptography.fernet import Fernet
 import json
 
-class Employee(models.Model):
+class EmployeeHistory(models.Model):
     """
     Model representing an employee in the system.
     """
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.CASCADE,
-        related_name='employees'
-    )
-    name = models.CharField(max_length=255)
-    employee_id = models.CharField(max_length=100, unique=True)
+    company = models.ForeignKey(Company,on_delete=models.CASCADE,related_name='employees')
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    employee = models.ForeignKey(Employee,on_delete=models.CASCADE)
     position = models.CharField(max_length=100)
     start_dates = models.DateField()
     end_dates = models.DateField()
@@ -63,7 +59,7 @@ class Employee(models.Model):
             return f.decrypt(self._encrypted_employee_id).decode()
         return None
     
-    def add_role_history(self, department, role, start_date, end_date=None, duties=None):
+    def add_role_history(self,employee, company, department, position, start_date, end_date=None, duties=None):
         """
         Add a new role history entry for the employee.
         
@@ -96,8 +92,10 @@ class Employee(models.Model):
         self.save()
         
         return {
+            'employee': employee,
+            'company': company,
             'department': department,
-            'role': role,
+            'position': position,
             'start_date': start_date,
             'end_date': end_date,
             'duties': duties
