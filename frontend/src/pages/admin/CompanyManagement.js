@@ -17,7 +17,7 @@ const CompanyManagement = () => {
     registration_number: '',
     address: '',
     contact_person: '',
-    departments: [''],
+    departments: '',
     phone: '',
     email: '',
     createAdmin: false,
@@ -52,24 +52,8 @@ const CompanyManagement = () => {
     }));
   };
 
-  const handleDepartmentChange = (index, value) => {
-    setFormData(prev => {
-      const updated = [...prev.departments];
-      updated[index] = value;
-      return { ...prev, departments: updated };
-    });
-  };
-
-  const handleAddDepartment = () => {
-    setFormData(prev => ({ ...prev, departments: [...prev.departments, ''] }));
-  };
-
-  const handleRemoveDepartment = (index) => {
-    setFormData(prev => {
-      const updated = [...prev.departments];
-      updated.splice(index, 1);
-      return { ...prev, departments: updated };
-    });
+  const handleDepartmentsTextChange = (e) => {
+    setFormData(prev => ({ ...prev, departments: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
@@ -78,8 +62,10 @@ const CompanyManagement = () => {
     setLoading(true);
     setError('');
 
-    // Use departments array for backend, send as 'department' field
-    const departmentsArray = formData.departments.filter(dept => dept.trim());
+    // Split departments by newlines or commas
+    const departmentsArray = formData.departments
+      ? formData.departments.split(/\n|,|;/).map(d => d.trim()).filter(Boolean)
+      : [];
     const companyData = {
       name: formData.name,
       registration_date: formData.registration_date,
@@ -122,7 +108,7 @@ const CompanyManagement = () => {
         registration_number: '',
         address: '',
         contact_person: '',
-        departments: [''],
+        departments: '',
         phone: '',
         email: '',
         createAdmin: false,
@@ -140,13 +126,18 @@ const CompanyManagement = () => {
 
   const handleEdit = (company) => {
     setEditingCompany(company);
+    setShowForm(true);
     setFormData({
-      name: company.name,
+      name: company.name || '',
       registration_date: company.registration_date || '',
       registration_number: company.registration_number || '',
       address: company.address || '',
       contact_person: company.contact_person || '',
-      departments: Array.isArray(company.departments) ? company.departments : (company.department ? company.department : ['']),
+      departments: Array.isArray(company.departments)
+        ? company.departments.join(', ')
+        : (typeof company.departments === 'string' && company.departments)
+          ? company.departments
+          : '',
       phone: company.phone || '',
       email: company.email || '',
       createAdmin: false,
@@ -154,7 +145,6 @@ const CompanyManagement = () => {
       adminPassword: '',
       adminEmail: ''
     });
-    setShowForm(true);
   };
 
   const handleDelete = async (companyId) => {
@@ -181,7 +171,7 @@ const CompanyManagement = () => {
       registration_number: '',
       address: '',
       contact_person: '',
-      departments: [''],
+      departments: '',
       phone: '',
       email: '',
       createAdmin: false,
@@ -308,27 +298,15 @@ const CompanyManagement = () => {
             </div>
 
             <div className="form-group">
-              <label>Departments</label>
-              {formData.departments.map((dept, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-                  <input
-                    type="text"
-                    name={`department_${idx}`}
-                    value={dept}
-                    onChange={e => handleDepartmentChange(idx, e.target.value)}
-                    required
-                    style={{ flex: 1 }}
-                  />
-                  {formData.departments.length > 1 && (
-                    <button type="button" style={{ marginLeft: 8 }} onClick={() => handleRemoveDepartment(idx)}>
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button type="button" onClick={handleAddDepartment} style={{ marginTop: 6 }}>
-                Add Department
-              </button>
+              <label>Departments (separate by comma, semicolon, or newline)</label>
+              <textarea
+                name="departments"
+                value={formData.departments}
+                onChange={handleDepartmentsTextChange}
+                placeholder="e.g. HR, Finance\nIT"
+                rows={4}
+                style={{width:'100%'}}
+              />
             </div>
 
             <div className="form-group">
@@ -445,7 +423,15 @@ const CompanyManagement = () => {
                   <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.address}</td>
                   <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.email}</td>
                   <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.employee_count}</td>
-                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.departments ? company.departments.length : 0}</td>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">
+                    {
+                      Array.isArray(company.departments)
+                        ? company.departments.filter(d => d && d.trim()).length
+                        : (typeof company.departments === 'string' && company.departments)
+                          ? company.departments.split(',').map(d => d.trim()).filter(Boolean).length
+                          : 0
+                    }
+                  </td>
                   <td className="px-4 py-2 border-b border-gray-200 text-sm">
                     <button 
                       className="btn-secondary"

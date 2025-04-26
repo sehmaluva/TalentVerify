@@ -45,7 +45,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
         if not departments:
             return
         import re
-        if isinstance(departments, str):
+        if isinstance(departments, list):
+            departments = [d.strip() for d in departments if d.strip()]
+        else:
             departments = [d.strip() for d in re.split(r'(?:\\n|\n|,|;)+', departments) if d.strip()]
         for dept_name in departments:
             from ..models import Department
@@ -72,6 +74,11 @@ class CompanyViewSet(viewsets.ModelViewSet):
                     is_staff=True,
                     is_superuser=True
                 )
+
+    def perform_update(self, serializer):
+        company = serializer.save()
+        departments = self.request.data.get('departments') or self.request.data.get('department')
+        self._create_departments(company, departments)
 
     @action(detail=False, methods=['post'])
     def bulk_upload(self, request):
@@ -142,22 +149,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    def _create_departments(self, company, departments_text):
-        if not departments_text:
-            return
-        # Delete existing departments
-        #company.department_set.all().delete()
-        # Support splitting by literal '\n', real newlines, commas, or semicolons
-        import re
-        departments = [d.strip() for d in re.split(r'(?:\\n|\n|,|;)+', departments_text) if d.strip()]
-        #departments = [d.strip() for d in departments_text.split('\n') if d.strip()]
-        existing_departments = {dept.name: dept for dept in company.department_set.all()}
-        for dept_name in departments:
-            Department.objects.create(
-                company=company,
-                name=dept_name
-            )
-
     @action(detail=False, methods=['post'])
     def update_department(self, request, pk=None):
         company = self.get_object()
@@ -166,8 +157,12 @@ class CompanyViewSet(viewsets.ModelViewSet):
             return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
         department_text = request.data.get('department', '')
+        if isinstance(department_text, list):
+            # Convert list to a comma-separated string
+            department_text = ', '.join(department_text)
+
         department = [d.strip() for d in re.split(r'(?:\\n|\n|,|;)+', department_text) if d.strip()]
-        company.department = department
+        company.department = ', '.join(department)  # Store as a string
         company.save()
         return Response(self.get_serializer(company).data)
 

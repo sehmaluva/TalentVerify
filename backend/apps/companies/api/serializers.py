@@ -69,6 +69,7 @@ class CompanySerializer(serializers.ModelSerializer):
     employees = EmployeeSerializer(many=True, read_only=True)
     current_employees = serializers.SerializerMethodField()
     employee_count = serializers.IntegerField(read_only=True)
+    departments = serializers.CharField(write_only=True, required=False, allow_blank=True)
     
     class Meta:
         model = Company
@@ -84,6 +85,23 @@ class CompanySerializer(serializers.ModelSerializer):
         employees = [h.employee for h in histories if h.employee is not None]
         return EmployeeSerializer(employees, many=True).data
 
+    def validate_departments(self, value):
+        # Accept string (split by commas/newlines/semicolons) or list
+        import re
+        if isinstance(value, list):
+            return [str(v).strip() for v in value if str(v).strip()]
+        if isinstance(value, str):
+            return [v.strip() for v in re.split(r'[\n,;]+', value) if v.strip()]
+        raise serializers.ValidationError('Invalid departments format')
+
+    def to_internal_value(self, data):
+        # Ensure departments is always a list for backend processing
+        ret = super().to_internal_value(data)
+        departments = data.get('departments') or data.get('department')
+        if departments is not None:
+            ret['departments'] = self.validate_departments(departments)
+        return ret
+
     def validate_registration_date(self, value):
         """
         Validate that the registration date is not in the future.
@@ -91,19 +109,6 @@ class CompanySerializer(serializers.ModelSerializer):
         if value > datetime.now().date():
             raise serializers.ValidationError("Registration date cannot be in the future")
         return value
-    """
-    def validate_department(self, value):
-        
-        #Validate that department is a list of strings.
-      
-        if not isinstance(value, list):
-            raise serializers.ValidationError("department must be a list")
-        if not all(isinstance(dept, str) for dept in value):
-            raise serializers.ValidationError("All department must be strings")
-        return value
-
-        """
-
 
 class CompanyBulkUploadSerializer(serializers.Serializer):
     """

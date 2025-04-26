@@ -127,7 +127,7 @@ const CompanyDashboard = () => {
     e.preventDefault();
     await handleCompanyUpdate({
       ...editFormData,
-      departments: (editFormData.departments || []).filter(d => d.trim() !== '').join(',')
+      department: (editFormData.departments || []).filter(d => d.trim() !== '')
     });
     setShowEditForm(false);
   };
