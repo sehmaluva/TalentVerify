@@ -11,6 +11,7 @@ import CompanyManagement from './pages/admin/CompanyManagement';
 import Navbar from './components/Navbar/Navbar';
 import './App.css';
 import EmployeeManagement from './pages/admin/EmployeeManagement';
+import CompanyEmployeeManagement from './pages/company/CompanyEmployeeManagement';
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedposition }) => {
@@ -90,10 +91,26 @@ function App() {
 
             {/* Company Routes */}
             <Route
+              path="/company/dashboard/:id"
+              element={
+                <ProtectedRoute allowedposition={['company', 'admin']}>
+                  <CompanyDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/company"
               element={
                 <ProtectedRoute allowedposition={['company']}>
                   <CompanyDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company/dashboard/:id/employees"
+              element={
+                <ProtectedRoute allowedposition={['company', 'admin']}>
+                  <CompanyEmployeeManagement />
                 </ProtectedRoute>
               }
             />

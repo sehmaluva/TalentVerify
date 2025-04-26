@@ -5,7 +5,7 @@ URL patterns for the users app.
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from ..users import views
-from .views import UserList
+from .views import UserList, UserDetailView, UserRegisterView, UserProfileView
 from backend.settings import LOGGING
 import logging
 
@@ -21,6 +21,7 @@ try:
             path('login/', TokenObtainPairView.as_view(), name='login'),
             path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
             path('me/', views.UserProfileView.as_view(), name='profile'),
+            path('<int:pk>/', UserDetailView.as_view(), name='user-detail'),
         ] 
 except Exception as e:
                     logger.error(f"An error occurred: {str(e)}", exc_info=True)

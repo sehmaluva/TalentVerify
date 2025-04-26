@@ -1,66 +1,55 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { employeeService } from '../../services/employeeService';
-import { companyService } from '../../services/companyService';
-import { useNavigate } from 'react-router-dom';
 import DataUpload from '../../components/DataUpload/DataUpload';
 import '../../styles/EmployeeManagement.css';
 
-const EmployeeManagement = () => {
+const CompanyEmployeeManagement = () => {
+  const { id: companyId } = useParams();
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
-  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    company: '',
     name: '',
     employee_id: '',
     department: '',
     position: '',
     joining_date: '',
     end_date: '',
-    duties: ''
+    duties: '',
+    email: '',
+    phone: '',
+    date_of_birth: '',
+    gender: '',
+    salary: '',
   });
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCompany, setSelectedCompany] = useState('');
   const [availableDepartments, setAvailableDepartments] = useState([]);
-  const navigate = useNavigate();
+
+  // Gender options matching backend (update as needed)
+  const GENDER_OPTIONS = [
+    { value: 'M', label: 'Male' },
+    { value: 'F', label: 'Female' },
+    { value: 'O', label: 'Other' }
+  ];
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchEmployees();
+  }, [companyId]);
 
-  useEffect(() => {
-    if (selectedCompany) {
-      const company = companies.find(c => String(c.id) === String(selectedCompany));
-      let depts = [];
-      if (company) {
-        if (Array.isArray(company.departments)) {
-          depts = company.departments;
-        } else if (Array.isArray(company.department)) {
-          depts = company.department;
-        } else if (typeof company.department === 'string' && company.department) {
-          depts = [company.department];
-        }
-      }
-      setAvailableDepartments(depts);
-    } else {
-      setAvailableDepartments([]);
-    }
-  }, [selectedCompany, companies]);
-
-  const fetchData = async () => {
+  const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const [employeesData, companiesData] = await Promise.all([
-        employeeService.getEmployees(),
-        companyService.getCompanies()
-      ]);
+      const employeesData = await employeeService.getEmployeesByCompany(companyId);
       setEmployees(employeesData);
-      setCompanies(companiesData);
+      // Optionally extract departments from employees
+      const depts = [...new Set(employeesData.map(e => e.department).filter(Boolean))];
+      setAvailableDepartments(depts);
     } catch (err) {
-      setError('Failed to fetch data');
+      setError('Failed to fetch employees');
     } finally {
       setLoading(false);
     }
@@ -68,31 +57,37 @@ const EmployeeManagement = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (name === 'company') {
-      setSelectedCompany(value);
-      setFormData(prev => ({ ...prev, department: '' })); // Reset department
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Format date fields as YYYY-MM-DD
+      const formatDate = (date) => {
+        if (!date) return '';
+        if (typeof date === 'string') return date;
+        // If date is a Date object
+        return date.toISOString().split('T')[0];
+      };
+      const submitData = {
+        ...formData,
+        company: companyId,
+        joining_date: formatDate(formData.joining_date),
+        end_date: formData.end_date ? formatDate(formData.end_date) : '',
+        date_of_birth: formatDate(formData.date_of_birth),
+      };
+      
       if (editingEmployee) {
-        await employeeService.updateEmployee(editingEmployee.id, formData);
+        await employeeService.updateEmployee(editingEmployee.id, submitData);
       } else {
-        await employeeService.createEmployee(formData);
+        await employeeService.createEmployee(submitData);
       }
       setShowForm(false);
       setEditingEmployee(null);
-      setFormData({
-        company: '', name: '', employee_id: '', department: '', position: '', joining_date: '', end_date: '', duties: ''
-      });
-      fetchData();
+      setFormData({ name: '', employee_id: '', department: '', position: '', joining_date: '', end_date: '', duties: '', email: '', phone: '', date_of_birth: '', gender: '', salary: '', });
+      fetchEmployees();
     } catch (err) {
       setError('Failed to save employee');
     } finally {
@@ -103,23 +98,25 @@ const EmployeeManagement = () => {
   const handleEdit = (employee) => {
     setEditingEmployee(employee);
     setFormData({
-      company: employee.company || '',
       name: employee.name || '',
       employee_id: employee.employee_id || '',
       department: employee.department || '',
       position: employee.position || '',
       joining_date: employee.joining_date || '',
       end_date: employee.end_date || '',
-      duties: employee.duties || ''
+      duties: employee.duties || '',
+      email: employee.email || '',
+      phone: employee.phone || '',
+      date_of_birth: employee.date_of_birth || '',
+      gender: employee.gender || '',
+      salary: employee.salary || '',
     });
     setShowForm(true);
   };
 
   const handleAdd = () => {
     setEditingEmployee(null);
-    setFormData({
-      company: '', name: '', employee_id: '', department: '', position: '', joining_date: '', end_date: '', duties: ''
-    });
+    setFormData({ name: '', employee_id: '', department: '', position: '', joining_date: '', end_date: '', duties: '', email: '', phone: '', date_of_birth: '', gender: '', salary: '', });
     setShowForm(true);
   };
 
@@ -128,7 +125,7 @@ const EmployeeManagement = () => {
     setLoading(true);
     try {
       await employeeService.deleteEmployee(id);
-      fetchData();
+      fetchEmployees();
     } catch (err) {
       setError('Failed to delete employee');
     } finally {
@@ -140,10 +137,11 @@ const EmployeeManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      await employeeService.bulkUpload(formData);
-      fetchData();
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('company', companyId);
+      await employeeService.bulkUpload(formDataUpload);
+      fetchEmployees();
     } catch (err) {
       setError('Bulk upload failed');
     } finally {
@@ -151,41 +149,33 @@ const EmployeeManagement = () => {
     }
   };
 
+  // Only show employees from this company and currently employed (no end_date or end_date in the future)
   const filteredEmployees = employees.filter(emp => {
-    const departmentValue =
-      Array.isArray(emp.department)
-        ? emp.department.join(', ')
-        : typeof emp.department === 'string'
-          ? emp.department
-          : typeof emp.department === 'number'
-            ? emp.department.toString()
-            : '';
-
+    const term = searchTerm.toLowerCase();
+    const isCurrent = !emp.end_date || new Date(emp.end_date) >= new Date();
     return (
-      (emp.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (emp.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      departmentValue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (emp.position || '').toLowerCase().includes(searchTerm.toLowerCase())
+      emp.company == companyId &&
+      isCurrent &&
+      (
+        emp.name?.toLowerCase().includes(term) ||
+        emp.employee_id?.toLowerCase().includes(term) ||
+        emp.department?.toLowerCase().includes(term) ||
+        emp.position?.toLowerCase().includes(term)
+      )
     );
   });
 
-  if (loading) return <div>Loading...</div>;
-
   return (
     <div className="employee-management">
-      <button onClick={() => navigate(-1)} className="back-btn">Back to Dashboard</button>
-      <h2>Employee Management</h2>
-      {error && <div className="error">{error}</div>}
+      <button className="btn-secondary" onClick={() => navigate(-1)} style={{marginBottom:'1rem'}}>Back</button>
+      <h2>Company Employees</h2>
+      <div style={{marginBottom: '1rem', fontWeight: 'bold'}}>
+        Total Employees: {filteredEmployees.length}
+      </div>
+      {error && <div className="error-message">{error}</div>}
       {showForm ? (
         <div className="form-container">
-          <form className="employee-form" onSubmit={handleSubmit} style={{marginBottom: 16, border: '1px solid #ddd', borderRadius: 8, padding: 16, background: '#fafbfc'}}>
-            <div className="form-group">
-              <label>Company</label>
-              <select name="company" value={formData.company} onChange={handleChange} required>
-                <option value="">Select Company</option>
-                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
+          <form className="employee-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Name</label>
               <input name="name" value={formData.name} onChange={handleChange} placeholder="Name" required />
@@ -219,9 +209,34 @@ const EmployeeManagement = () => {
               <label>Duties</label>
               <input name="duties" value={formData.duties} onChange={handleChange} placeholder="Duties" />
             </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input name="email" value={formData.email} onChange={handleChange} placeholder="Email" type="email" required />
+            </div>
+            <div className="form-group">
+              <label>Phone</label>
+              <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" required />
+            </div>
+            <div className="form-group">
+              <label>Date of Birth</label>
+              <input name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} placeholder="YYYY-MM-DD" type="date" required />
+            </div>
+            <div className="form-group">
+              <label>Gender</label>
+              <select name="gender" value={formData.gender} onChange={handleChange} required>
+                <option value="">Select Gender</option>
+                {GENDER_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Salary</label>
+              <input name="salary" value={formData.salary} onChange={handleChange} placeholder="Salary" type="number" min="0" required />
+            </div>
             <div className="form-actions">
               <button type="submit" className="btn-primary">{editingEmployee ? 'Update' : 'Add'} Employee</button>
-              <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setEditingEmployee(null); setFormData({ company: '', name: '', employee_id: '', department: '', position: '', joining_date: '', end_date: '', duties: '' }); }}>Cancel</button>
+              <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setEditingEmployee(null); setFormData({ name: '', employee_id: '', department: '', position: '', joining_date: '', end_date: '', duties: '', email: '', phone: '', date_of_birth: '', gender: '', salary: '', }); }}>Cancel</button>
             </div>
           </form>
         </div>
@@ -242,14 +257,17 @@ const EmployeeManagement = () => {
         <thead>
           <tr>
             <th>Name</th>
-            <th>Email</th>
             <th>Employee ID</th>
             <th>Department</th>
             <th>Position</th>
-            <th>Company</th>
             <th>Joining Date</th>
             <th>End Date</th>
             <th>Duties</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Date of Birth</th>
+            <th>Gender</th>
+            <th>Salary</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -257,14 +275,17 @@ const EmployeeManagement = () => {
           {filteredEmployees.map(emp => (
             <tr key={emp.id}>
               <td>{emp.name}</td>
-              <td>{emp.email}</td>
               <td>{emp.employee_id}</td>
               <td>{emp.department}</td>
               <td>{emp.position}</td>
-              <td>{companies.find(c => c.id === emp.company)?.name || emp.company}</td>
               <td>{emp.joining_date ? new Date(emp.joining_date).toLocaleDateString('en-GB') : 'N/A'}</td>
               <td>{emp.end_date ? new Date(emp.end_date).toLocaleDateString('en-GB') : 'Current'}</td>
               <td>{emp.duties}</td>
+              <td>{emp.email}</td>
+              <td>{emp.phone}</td>
+              <td>{emp.date_of_birth ? new Date(emp.date_of_birth).toLocaleDateString('en-GB') : 'N/A'}</td>
+              <td>{emp.gender}</td>
+              <td>{emp.salary}</td>
               <td>
                 <button onClick={() => handleEdit(emp)}>Edit</button>
                 <button onClick={() => handleDelete(emp.id)}>Delete</button>
@@ -277,4 +298,4 @@ const EmployeeManagement = () => {
   );
 };
 
-export default EmployeeManagement;
+export default CompanyEmployeeManagement;

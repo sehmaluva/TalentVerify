@@ -41,8 +41,106 @@ class CompanyViewSet(viewsets.ModelViewSet):
         else:
             return Company.objects.all().only('name', 'department')
 
+    def _create_departments(self, company, departments):
+        if not departments:
+            return
+        import re
+        if isinstance(departments, str):
+            departments = [d.strip() for d in re.split(r'(?:\\n|\n|,|;)+', departments) if d.strip()]
+        for dept_name in departments:
+            from ..models import Department
+            Department.objects.get_or_create(company=company, name=dept_name)
+
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        company = serializer.save(created_by=self.request.user)
+        departments = self.request.data.get('departments') or self.request.data.get('department')
+        self._create_departments(company, departments)
+        # --- Create company admin user if admin data is provided ---
+        admin_email = self.request.data.get('admin_email')
+        admin_username = self.request.data.get('admin_username')
+        admin_password = self.request.data.get('admin_password')
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        if admin_email and admin_username and admin_password:
+            if not User.objects.filter(username=admin_username).exists():
+                User.objects.create_user(
+                    username=admin_username,
+                    email=admin_email,
+                    password=admin_password,
+                    role='admin',
+                    company=company,
+                    is_staff=True,
+                    is_superuser=True
+                )
+
+    @action(detail=False, methods=['post'])
+    def bulk_upload(self, request):
+        serializer = CompanyBulkUploadSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        file = serializer.validated_data['file']
+        try:
+            print('DEBUG bulk_upload: request.user =', request.user, '| is_authenticated =', getattr(request.user, 'is_authenticated', None), '| id =', getattr(request.user, 'id', None))
+            if not hasattr(request.user, 'id') or not request.user.is_authenticated:
+                return Response({'error': 'Authentication required for bulk upload.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+            df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
+            companies, errors = [], []
+
+            for index, row in df.iterrows():
+                try:
+                    department = row.get('department', '[]')
+                    if isinstance(department, str):
+                        try:
+                            department = json.loads(department)
+                        except json.JSONDecodeError:
+                            department = [d.strip() for d in re.split(r',|;', department)]
+
+                    registration_date = pd.to_datetime(row['registration_date']).date()
+                    reg_number = str(row['registration_number'])
+                    company_data = {
+                        'name': row['name'],
+                        'registration_date': registration_date,
+                        'registration_number': reg_number,
+                        'address': row['address'],
+                        'contact_person': row['contact_person'],
+                        'department': department,
+                        'employee_count': int(row.get('employee_count', 0)),
+                        'phone': str(row['phone']),
+                        'email': row['email'],
+                    }
+
+                    from ..models import Company
+                    existing_company = Company.objects.filter(registration_number=reg_number).first()
+                    if existing_company:
+                        # Update existing company
+                        for field, value in company_data.items():
+                            if field != 'department':
+                                setattr(existing_company, field, value)
+                        existing_company.save()
+                        self._create_departments(existing_company, department)
+                        companies.append(self.get_serializer(existing_company).data)
+                    else:
+                        # Create new company
+                        serializer = self.get_serializer(data=company_data)
+                        if serializer.is_valid():
+                            company = serializer.save(created_by=request.user)
+                            self._create_departments(company, department)
+                            companies.append(serializer.data)
+                        else:
+                            errors.append({'row': index + 1, 'errors': serializer.errors})
+                except Exception as e:
+                    errors.append({'row': index + 1, 'errors': str(e)})
+
+            return Response({
+                'message': f'Successfully created {len(companies)} companies',
+                'companies': companies,
+                'errors': errors
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def _create_departments(self, company, departments_text):
         if not departments_text:
@@ -61,58 +159,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=['post'])
-    def bulk_upload(self, request):
-        serializer = CompanyBulkUploadSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        file = serializer.validated_data['file']
-        try:
-            df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
-            companies, errors = [], []
-
-            for index, row in df.iterrows():
-                try:
-                    department = row.get('department', '[]')
-                    if isinstance(department, str):
-                        try:
-                            department = json.loads(department)
-                        except json.JSONDecodeError:
-                            department = [d.strip() for d in re.split(r',|;', department)]
-
-                    registration_date = pd.to_datetime(row['registration_date']).date()
-                    company_data = {
-                        'name': row['name'],
-                        'registration_date': registration_date,
-                        'registration_number': str(row['registration_number']),
-                        'address': row['address'],
-                        'contact_person': row['contact_person'],
-                        'department': department,
-                        'employee_count': int(row.get('employee_count', 0)),
-                        'phone': str(row['phone']),
-                        'email': row['email'],
-                        'created_by': request.user.id
-                    }
-
-                    serializer = self.get_serializer(data=company_data)
-                    if serializer.is_valid():
-                        serializer.save()
-                        companies.append(serializer.data)
-                    else:
-                        errors.append({'row': index + 1, 'errors': serializer.errors})
-                except Exception as e:
-                    errors.append({'row': index + 1, 'errors': str(e)})
-
-            return Response({
-                'message': f'Successfully created {len(companies)} companies',
-                'companies': companies,
-                'errors': errors
-            }, status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=['post'])
     def update_department(self, request, pk=None):
         company = self.get_object()
         user = request.user
@@ -150,15 +196,33 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         # This thing need to be posted to employee app
     def perform_create(self, serializer):
         employee = serializer.save()
-        # Create initial history entry
+        # Handle past work history if provided
+        history_data = self.request.data.get('history', [])
+        if isinstance(history_data, str):
+            import json
+            history_data = json.loads(history_data)
+        for hist in history_data:
+            from apps.companies.models import Company, Department
+            company = Company.objects.get(id=hist['company'])
+            department = Department.objects.get(id=hist['department'])
+            EmployeeHistory.objects.create(
+                employee=employee,
+                company=company,
+                department=department,
+                position=hist.get('position', ''),
+                start_date=hist.get('start_date'),
+                end_date=hist.get('end_date'),
+                duties=hist.get('duties', '')
+            )
+        # Add current job as the latest history (on top)
         EmployeeHistory.objects.create(
-            employee=employee.name,
+            employee=employee,
             company=employee.company,
             department=employee.department,
             position=employee.position,
-            start_date=employee.start_date,
-            duties=employee.duties,
-            is_current=True
+            start_date=employee.joining_date,
+            end_date=None,
+            duties=getattr(employee, 'duties', '')
         )
     
     def perform_update(self, serializer):
@@ -200,7 +264,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         elif user.role == 'company' and hasattr(user, 'company'):
             return Employee.objects.filter(company=user.company)
         else:
-            return Employee.objects.filter(employee=user.company)
+            return Employee.objects.filter(company=user.company)
 
     @action(detail=False, methods=['post'])
     def bulk_upload(self, request):
@@ -278,6 +342,15 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
         employees = Employee.objects.filter(filters)
         return Response(self.get_serializer(employees, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def current_at_company(self, request):
+        company_id = request.query_params.get('company_id')
+        if not company_id:
+            return Response({'error': 'company_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        histories = EmployeeHistory.objects.filter(company_id=company_id, end_date__isnull=True)
+        return Response(EmployeeSerializer(histories, many=True).data)
+
 
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all()

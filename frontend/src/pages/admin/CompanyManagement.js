@@ -78,7 +78,7 @@ const CompanyManagement = () => {
     setLoading(true);
     setError('');
 
-    // Use departments array for backend
+    // Use departments array for backend, send as 'department' field
     const departmentsArray = formData.departments.filter(dept => dept.trim());
     const companyData = {
       name: formData.name,
@@ -86,7 +86,7 @@ const CompanyManagement = () => {
       registration_number: formData.registration_number,
       address: formData.address,
       contact_person: formData.contact_person,
-      departments: departmentsArray,
+      department: departmentsArray, // <-- send as 'department'
       phone: formData.phone,
       email: formData.email
     };
@@ -192,15 +192,15 @@ const CompanyManagement = () => {
     setEditingCompany(null);
   };
 
-  const handleBulkUpload = async (file) => {
+  const handleBulkUploadCompanies = async (file) => {
     setLoading(true);
     setError('');
 
     try {
-      await companyService.bulkUploadEmployees(file);
+      await companyService.bulkUploadCompanies(file);
       fetchCompanies();
     } catch (err) {
-      setError(err.message || 'Failed to upload companies');
+      setError(err.message || 'Bulk upload failed');
     } finally {
       setLoading(false);
     }
@@ -212,25 +212,33 @@ const CompanyManagement = () => {
 
   return (
     <div className="company-management">
+      <button className="btn-secondary" onClick={() => navigate(-1)} style={{marginBottom:'1rem'}}>Back</button>
       <div className="section-header">
         <h2>{editingCompany ? 'Edit Company' : 'Company Management'}</h2>
-        <div className="header-actions">
-          {!showForm && (
-            <>
-              <button 
-                className="btn-primary"
-                onClick={() => setShowForm(true)}
-              >
-                Add Company
-              </button>
-              <DataUpload 
-                onUpload={handleBulkUpload}
-                accept=".csv,.xlsx"
-                label="Upload Companies"
+        {!showForm && (
+          <>
+            <button 
+              className="btn-primary"
+              onClick={() => setShowForm(true)}
+            >
+              Add Company
+            </button>
+            <button
+              className="btn-secondary"
+              style={{ marginLeft: '8px' }}
+              onClick={() => window.history.back()}
+            >
+              Back
+            </button>
+            <div style={{ display: 'inline-block', marginLeft: '16px' }}>
+              <DataUpload
+                label="Bulk Upload Companies"
+                accept=".csv, .xlsx, .xls"
+                onUpload={handleBulkUploadCompanies}
               />
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -430,29 +438,24 @@ const CompanyManagement = () => {
             </thead>
             <tbody>
               {companies.map(company => (
-                <tr key={company.id}>
+                <tr key={company.id} className="company-row" onClick={() => navigate(`/company/dashboard/${company.id}`)}>
                   <td className="px-4 py-2 border-b border-gray-200 text-sm">
-                    <span
-                      className="company-link hover:underline text-blue-600 cursor-pointer"
-                      onClick={() => navigate(`/company/${company.id}`)}
-                    >
-                      {company.name}
-                    </span>
+                    {company.name}
                   </td>
                   <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.address}</td>
                   <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.email}</td>
-                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.employee_count ?? (company.employees ? company.employees.length : 0)}</td>
-                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.departments ? company.departments.length : (company.department ? company.department.length : 0)}</td>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.employee_count}</td>
+                  <td className="px-4 py-2 border-b border-gray-200 text-sm">{company.departments ? company.departments.length : 0}</td>
                   <td className="px-4 py-2 border-b border-gray-200 text-sm">
                     <button 
                       className="btn-secondary"
-                      onClick={() => handleEdit(company)}
+                      onClick={e => { e.stopPropagation(); handleEdit(company); }}
                     >
                       Edit
                     </button>
                     <button 
                       className="btn-danger"
-                      onClick={() => handleDelete(company.id)}
+                      onClick={e => { e.stopPropagation(); handleDelete(company.id); }}
                     >
                       Delete
                     </button>

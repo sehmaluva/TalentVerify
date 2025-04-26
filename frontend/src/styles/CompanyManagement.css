@@ -156,6 +156,14 @@ tr:hover {
   color: #c82333;
 }
 
+.company-row {
+  cursor: pointer;
+}
+
+.company-row:hover {
+  background-color: #e6f2ff;
+}
+
 .error-message {
   padding: 1rem;
   background-color: #f8d7da;

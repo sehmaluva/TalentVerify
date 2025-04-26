@@ -3,7 +3,7 @@ import { api } from './authService';
 export const companyService = {
   getCompanies: async () => {
     try {
-      const response = await api.get('/companies/');
+      const response = await api.get('/companies/companies/');
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch companies');
@@ -12,7 +12,7 @@ export const companyService = {
 
   getCompanyById: async (id) => {
     try {
-      const response = await api.get(`/companies/${id}/`);
+      const response = await api.get(`/companies/companies/${id}/`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch company details');
@@ -21,7 +21,7 @@ export const companyService = {
 
   createCompany: async (companyData) => {
     try {
-      const response = await api.post('/companies/', companyData);
+      const response = await api.post('/companies/companies/', companyData);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to create company');
@@ -30,7 +30,7 @@ export const companyService = {
 
   updateCompany: async (id, companyData) => {
     try {
-      const response = await api.put(`/companies/${id}/`, companyData);
+      const response = await api.put(`/companies/companies/${id}/`, companyData);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to update company');
@@ -59,6 +59,21 @@ export const companyService = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to upload employees');
+    }
+  },
+
+  bulkUploadCompanies: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post('/companies/companies/bulk_upload/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to upload companies');
     }
   }
 }; 

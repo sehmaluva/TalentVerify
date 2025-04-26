@@ -13,8 +13,9 @@ const UserManagement = () => {
     username: '',
     email: '',
     password: '',
+    password2: '',
     role: 'employee',
-    company: '',
+    company_id: '',
     is_active: true
   });
   const [editingUser, setEditingUser] = useState(null);
@@ -51,14 +52,20 @@ const UserManagement = () => {
     setLoading(true);
     setError('');
 
+    // Prepare payload and only include company_id if it has a value
+    const payload = { ...formData };
+    if (!payload.company_id) {
+      delete payload.company_id;
+    }
+
     try {
       if (editingUser) {
-        await userService.updateUser(editingUser.id, formData);
+        await userService.updateUser(editingUser.id, payload);
         setUsers(users.map(user => 
           user.id === editingUser.id ? { ...user, ...formData } : user
         ));
       } else {
-        const newUser = await userService.createUser(formData);
+        const newUser = await userService.createUser(payload);
         setUsers([...users, newUser]);
       }
       
@@ -67,8 +74,9 @@ const UserManagement = () => {
         username: '',
         email: '',
         password: '',
+        password2: '',
         role: 'employee',
-        company: '',
+        company_id: '',
         is_active: true
       });
       setEditingUser(null);
@@ -85,8 +93,9 @@ const UserManagement = () => {
       username: user.username,
       email: user.email,
       password: '',
+      password2: '',
       role: user.role,
-      company: user.company_id || '',
+      company_id: user.company_id || '',
       is_active: user.is_active
     });
     setShowForm(true);
@@ -114,6 +123,7 @@ const UserManagement = () => {
       username: '',
       email: '',
       password: '',
+      password2: '',
       role: 'employee',
       company: '',
       is_active: true
@@ -130,12 +140,21 @@ const UserManagement = () => {
       <div className="section-header">
         <h2>{editingUser ? 'Edit User' : 'User Management'}</h2>
         {!showForm && (
-          <button 
-            className="btn-primary"
-            onClick={() => setShowForm(true)}
-          >
-            Add User
-          </button>
+          <>
+            <button 
+              className="btn-primary"
+              onClick={() => setShowForm(true)}
+            >
+              Add User
+            </button>
+            <button
+              className="btn-secondary"
+              style={{ marginLeft: '8px' }}
+              onClick={() => window.history.back()}
+            >
+              Back
+            </button>
+          </>
         )}
       </div>
 
@@ -180,6 +199,18 @@ const UserManagement = () => {
                 placeholder={editingUser ? "Leave blank to keep current password" : ""}
               />
             </div>
+            <div className="form-group">
+              <label htmlFor="password2">Confirm Password</label>
+              <input
+                type="password"
+                id="password2"
+                name="password2"
+                value={formData.password2}
+                onChange={handleChange}
+                required={!editingUser}
+                placeholder={editingUser ? "Leave blank to keep current password" : ""}
+              />
+            </div>
             
             <div className="form-group">
               <label htmlFor="role">Role</label>
@@ -201,8 +232,8 @@ const UserManagement = () => {
                 <label htmlFor="company">Company</label>
                 <select
                   id="company"
-                  name="company"
-                  value={formData.company}
+                  name="company_id"
+                  value={formData.company_id}
                   onChange={handleChange}
                   required
                 >
@@ -239,7 +270,7 @@ const UserManagement = () => {
                 disabled={loading}
               >
                 Cancel
-              </button>
+              </button>       
             </div>
           </form>
         </div>

@@ -20,44 +20,46 @@ class DepartmentSerializer(serializers.ModelSerializer):
         return obj.get_total_employees()
 
     def get_employees(self, obj):
-        # Only include active employees in this department
-        employees = Employee.objects.filter(department=obj, is_active=True)
-        return EmployeeSerializer(employees, many=True).data
+        # Only include active employees currently in this department
+        from apps.employees.models import EmployeeHistory
+        histories = EmployeeHistory.objects.filter(department=obj, end_date__isnull=True)
+        employees = [h.employee for h in histories if h.employee.is_active]
+        from .serializers import EmployeeSerializer as EmpSerializer  # avoid circular import
+        return EmpSerializer(employees, many=True).data
 
     def get_company_name(self, obj):
         return obj.company.name if obj.company else None
 
+class EmployeeHistoryInputSerializer(serializers.Serializer):
+    company = serializers.IntegerField()
+    department = serializers.IntegerField()
+    position = serializers.CharField()
+    start_date = serializers.DateField()
+    end_date = serializers.DateField(allow_null=True, required=False)
+    duties = serializers.CharField(allow_blank=True, required=False)
+
 class EmployeeSerializer(serializers.ModelSerializer):
     """
-    Serializer for the Employee model.
+    Serializer for the Employee model (not EmployeeHistory!).
     """
+    history = EmployeeHistoryInputSerializer(many=True, required=False, write_only=True)
     class Meta:
-        model = EmployeeHistory
-        fields = ['id', 'name', 'employee_id', 'position', 'company','department'] 
-        read_only_fields = ('created_at', 'updated_at')
-    
+        model = Employee
+        fields = [
+            'id', 'company', 'department', 'name', 'employee_id', 'email', 'phone', 'date_of_birth',
+            'gender', 'joining_date', 'salary', 'position', 'is_active', 'history'
+        ]
+        read_only_fields = ('id',)
+
     def validate_date_of_birth(self, value):
-        """
-        Validate that the date of birth is not in the future.
-        """
         if value > datetime.now().date():
             raise serializers.ValidationError("Date of birth cannot be in the future")
         return value
-    
+
     def validate_joining_date(self, value):
-        """
-        Validate that the joining date is not in the future.
-        """
         if value > datetime.now().date():
             raise serializers.ValidationError("Joining date cannot be in the future")
         return value
-    
-    def get_company_departments(self, obj):
-        if obj.company:
-            # Assumes related_name='department' on Department FK to Company
-            return [dept.name for dept in obj.company.department.all()]
-        return []
-    
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -65,6 +67,7 @@ class CompanySerializer(serializers.ModelSerializer):
     Serializer for the Company model.
     """
     employees = EmployeeSerializer(many=True, read_only=True)
+    current_employees = serializers.SerializerMethodField()
     employee_count = serializers.IntegerField(read_only=True)
     
     class Meta:
@@ -74,6 +77,12 @@ class CompanySerializer(serializers.ModelSerializer):
     
     def get_departments(self, obj):
         return [dept.name for dept in obj.department.all()]
+
+    def get_current_employees(self, obj):
+        # Employees with a history at this company and end_date is null (current)
+        histories = EmployeeHistory.objects.filter(company=obj, end_date__isnull=True)
+        employees = [h.employee for h in histories if h.employee is not None]
+        return EmployeeSerializer(employees, many=True).data
 
     def validate_registration_date(self, value):
         """

@@ -12,14 +12,14 @@ from datetime import date
 class Company(models.Model):
     name = models.CharField(max_length=255)
     registration_date = models.DateField()
-    registration_number = models.CharField(max_length=100, unique=True)
+    registration_number = models.CharField(max_length=100, unique=True)  # Restored plaintext field
     address = models.TextField()
-    contact_person = models.CharField(max_length=255)
+    contact_person = models.CharField(max_length=255)  # Restored plaintext
+    phone = models.CharField(max_length=20)  # Restored plaintext
+    email = models.EmailField()  # Restored plaintext
     # Consider removing this if using Department model instead:
     departments = models.TextField(blank=True, default="[]")
     employee_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    phone = models.CharField(max_length=20)
-    email = models.EmailField()
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -27,11 +27,6 @@ class Company(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    _encrypted_registration_number = models.BinaryField(null=True, blank=True)
-    _encrypted_contact_person = models.BinaryField(null=True, blank=True)
-    _encrypted_phone = models.BinaryField(null=True, blank=True)
-    _encrypted_email = models.BinaryField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Company'
@@ -49,63 +44,95 @@ class Company(models.Model):
             self.employee_count = self.company_employees.count()
             super().save(update_fields=['employee_count'])  # Update only that field
 
-    """
-    def save(self, *args, **kwargs):
-        self.employee_count = self.company_employees.count()
-        if not self._encrypted_registration_number:
-            self._encrypt_registration_number()
-        if not self._encrypted_contact_person:
-            self._encrypt_contact_person()
-        if not self._encrypted_phone:
-            self._encrypt_phone()
-        if not self._encrypted_email:
-            self._encrypt_email()
-        super().save(*args, **kwargs)
-    """
+    # --- Encryption logic commented out below ---
+    # _encrypted_registration_number = models.BinaryField(null=True, blank=True, unique=True)
+    # _encrypted_contact_person = models.BinaryField(null=True, blank=True)
+    # _encrypted_phone = models.BinaryField(null=True, blank=True)
+    # _encrypted_email = models.BinaryField(null=True, blank=True)
 
-    def _get_fernet(self):
-        key = settings.ENCRYPTION_KEY.encode()
-        return Fernet(key)
+    # def _get_fernet(self):
+    #     key = settings.ENCRYPTION_KEY.encode()
+    #     return Fernet(key)
 
-    def _encrypt_registration_number(self):
-        if self.registration_number:
-            self._encrypted_registration_number = self._get_fernet().encrypt(self.registration_number.encode())
+    # @property
+    # def registration_number(self):
+    #     if self._encrypted_registration_number:
+    #         return self._get_fernet().decrypt(self._encrypted_registration_number).decode()
+    #     return None
 
-    def _encrypt_contact_person(self):
-        if self.contact_person:
-            self._encrypted_contact_person = self._get_fernet().encrypt(self.contact_person.encode())
+    # @registration_number.setter
+    # def registration_number(self, value):
+    #     if value:
+    #         self._encrypted_registration_number = self._get_fernet().encrypt(value.encode())
+    #     else:
+    #         self._encrypted_registration_number = None
 
-    def _encrypt_phone(self):
-        if self.phone:
-            self._encrypted_phone = self._get_fernet().encrypt(self.phone.encode())
+    # def _encrypt_registration_number(self):
+    #     pass  # No longer needed, handled by property setter
 
-    def _encrypt_email(self):
-        if self.email:
-            self._encrypted_email = self._get_fernet().encrypt(self.email.encode())
+    # @property
+    # def contact_person(self):
+    #     if self._encrypted_contact_person:
+    #         return self._get_fernet().decrypt(self._encrypted_contact_person).decode()
+    #     return None
 
-    @property
-    def decrypted_registration_number(self):
-        if self._encrypted_registration_number:
-            return self._get_fernet().decrypt(self._encrypted_registration_number).decode()
-        return None
+    # @contact_person.setter
+    # def contact_person(self, value):
+    #     if value:
+    #         self._encrypted_contact_person = self._get_fernet().encrypt(value.encode())
+    #     else:
+    #         self._encrypted_contact_person = None
 
-    @property
-    def decrypted_contact_person(self):
-        if self._encrypted_contact_person:
-            return self._get_fernet().decrypt(self._encrypted_contact_person).decode()
-        return None
+    # def _encrypt_contact_person(self):
+    #     pass  # No longer needed, handled by property setter
 
-    @property
-    def decrypted_phone(self):
-        if self._encrypted_phone:
-            return self._get_fernet().decrypt(self._encrypted_phone).decode()
-        return None
+    # @property
+    # def phone(self):
+    #     if self._encrypted_phone:
+    #         return self._get_fernet().decrypt(self._encrypted_phone).decode()
+    #     return None
 
-    @property
-    def decrypted_email(self):
-        if self._encrypted_email:
-            return self._get_fernet().decrypt(self._encrypted_email).decode()
-        return None
+    # @phone.setter
+    # def phone(self, value):
+    #     if value:
+    #         self._encrypted_phone = self._get_fernet().encrypt(value.encode())
+    #     else:
+    #         self._encrypted_phone = None
+
+    # def _encrypt_phone(self):
+    #     pass  # No longer needed, handled by property setter
+
+    # @property
+    # def email(self):
+    #     if self._encrypted_email:
+    #         return self._get_fernet().decrypt(self._encrypted_email).decode()
+    #     return None
+
+    # @email.setter
+    # def email(self, value):
+    #     if value:
+    #         self._encrypted_email = self._get_fernet().encrypt(value.encode())
+    #     else:
+    #         self._encrypted_email = None
+
+    # def _encrypt_email(self):
+    #     pass  # No longer needed, handled by property setter
+
+    # @property
+    # def decrypted_registration_number(self):
+    #     return self.registration_number  # For backward compatibility
+
+    # @property
+    # def decrypted_contact_person(self):
+    #     return self.contact_person  # For backward compatibility
+
+    # @property
+    # def decrypted_phone(self):
+    #     return self.phone  # For backward compatibility
+
+    # @property
+    # def decrypted_email(self):
+    #     return self.email  # For backward compatibility
 
 
 class Department(models.Model):
@@ -133,15 +160,14 @@ class Employee(models.Model):
     ]
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_employees')
+    department = models.ForeignKey('companies.Department', on_delete=models.SET_NULL, null=True, blank=True, related_name='curent_employees')
     name = models.CharField(max_length=100)
     employee_id = models.CharField(max_length=100, unique=True)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
+    position= models.CharField(max_length=100)
     date_of_birth = models.DateField()
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name="company_departments")
-  # Optional: Change to ForeignKey(Department)
-    position = models.CharField(max_length=100)
     joining_date = models.DateField()
     salary = models.DecimalField(max_digits=10, decimal_places=2)
     is_active = models.BooleanField(default=True)
@@ -161,13 +187,63 @@ class Employee(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        if not self._encrypted_phone:
+        # Always encrypt sensitive fields before saving
+        if self.phone:
             self._encrypt_phone()
-        if not self._encrypted_email:
+        if self.email:
             self._encrypt_email()
-        if not self._encrypted_salary:
+        if self.salary:
             self._encrypt_salary()
+
+        # Track history if department/position provided in kwargs
+        department = kwargs.pop('department', None)
+        position = kwargs.pop('position', None)
+        duties = kwargs.pop('duties', '')
+        start_date = kwargs.pop('start_date', None)
+        end_date = kwargs.pop('end_date', None)
+
+        is_update = self.pk is not None
+        old_company = None
+        if is_update:
+            old = Employee.objects.get(pk=self.pk)
+            old_company = old.company
+
         super().save(*args, **kwargs)
+
+        # Only create/update history if department and position are provided
+        if department and position:
+            from django.apps import apps
+            EmployeeHistory = apps.get_model('employees', 'EmployeeHistory')
+            # Close previous history if exists and company/department/position changed
+            last_history = EmployeeHistory.objects.filter(employee=self, end_date__isnull=True).first()
+            if last_history and (
+                last_history.company != self.company or
+                last_history.department != department or
+                last_history.position != position
+            ):
+                last_history.end_date = end_date or self.updated_at.date()
+                last_history.save()
+                # Create new history
+                EmployeeHistory.objects.create(
+                    employee=self,
+                    company=self.company,
+                    department=department,
+                    position=position,
+                    start_date=start_date or self.updated_at.date(),
+                    end_date=None,
+                    duties=duties or ''
+                )
+            elif not last_history:
+                # No previous history, create new
+                EmployeeHistory.objects.create(
+                    employee=self,
+                    company=self.company,
+                    department=department,
+                    position=position,
+                    start_date=start_date or self.joining_date,
+                    end_date=None,
+                    duties=duties or ''
+                )
 
     def _get_fernet(self):
         return Fernet(settings.ENCRYPTION_KEY.encode())

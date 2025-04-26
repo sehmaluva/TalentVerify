@@ -1,0 +1,11 @@
+name,employee_id,department,position,joining_date,end_date,duties,company
+Tendai Mudzonga,EMP101,Finance,Accountant,2019-02-14,,Payroll,1
+Chipo Mutsvairo,EMP102,IT,Systems Administrator,2020-06-01,,Network Management,2
+Simba Chikore,EMP103,Sales,Sales Representative,2018-11-23,,Lead Generation,3
+Ruvimbo Nyathi,EMP104,HR,HR Assistant,2021-03-15,,Recruitment,1
+Tatenda Makoni,EMP105,Marketing,Marketing Specialist,2022-09-10,,Campaigns,2
+Kudzai Dube,EMP106,Operations,Operations Manager,2020-01-05,2024-01-05,Process Improvement,4
+Munyaradzi Hove,EMP107,Legal,Legal Advisor,2017-07-19,,Contract Review,3
+Fadzai Chirwa,EMP108,Customer Service,Customer Service Rep,2023-01-12,,Client Support,2
+Ropafadzo Moyo,EMP109,Procurement,Procurement Officer,2019-10-28,,Vendor Management,1
+Farirai Mlambo,EMP110,Logistics,Logistics Coordinator,2021-05-21,,Distribution,4

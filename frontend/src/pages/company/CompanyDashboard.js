@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../../auth/AuthContext';
 import { companyService } from '../../services/companyService';
 import { employeeService } from '../../services/employeeService';
@@ -13,17 +13,17 @@ const CompanyDashboard = () => {
   
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { id } = useParams();
 
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
-        const companyId = user.company?.id || user.company?.Id;
-        if (!companyId) {
-          setError('No company ID found for this user.');
+        if (!id) {
+          setError('No company ID found in URL.');
           setLoading(false);
           return;
         }
-        const company = await companyService.getCompanyById(companyId);
+        const company = await companyService.getCompanyById(id);
         setCompanyData(company);
       } catch (err) {
         setError('Failed to fetch company data');
@@ -32,7 +32,7 @@ const CompanyDashboard = () => {
       }
     };
     fetchCompanyData();
-  }, [user.company]);
+  }, [id]);
 
   const handleLogout = () => {
     logout();
@@ -64,10 +64,72 @@ const CompanyDashboard = () => {
       }
       const updatedCompany = await companyService.updateCompany(companyId, updatedData);
       setCompanyData(updatedCompany);
+      setError('');
     } catch (err) {
-      setError('Failed to update company');
+      const msg = err?.message || err?.toString() || 'Failed to update company';
+      setError(msg);
       console.error('Error updating company:', err);
     }
+  };
+
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    address: '',
+    registration_date: '',
+    registration_number: '',
+    contact_person: '',
+    phone: '',
+    email: '',
+    departments: ['']
+  });
+
+  // Open edit form with current company data
+  const handleEditClick = () => {
+    setEditFormData({
+      name: companyData.name || '',
+      address: companyData.address || '',
+      registration_date: companyData.registration_date || '',
+      registration_number: companyData.registration_number || '',
+      contact_person: companyData.contact_person || '',
+      phone: companyData.phone || '',
+      email: companyData.email || '',
+      departments: Array.isArray(companyData.departments) ? companyData.departments : (companyData.departments ? [companyData.departments] : [''])
+    });
+    setShowEditForm(true);
+  };
+
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Add/Remove Department fields
+  const handleDepartmentChange = (index, value) => {
+    setEditFormData(prev => {
+      const updated = [...(prev.departments || [])];
+      updated[index] = value;
+      return { ...prev, departments: updated };
+    });
+  };
+  const handleAddDepartment = () => {
+    setEditFormData(prev => ({ ...prev, departments: [...(prev.departments || []), ''] }));
+  };
+  const handleRemoveDepartment = (index) => {
+    setEditFormData(prev => {
+      const updated = [...(prev.departments || [])];
+      updated.splice(index, 1);
+      return { ...prev, departments: updated };
+    });
+  };
+
+  const handleEditFormSubmit = async (e) => {
+    e.preventDefault();
+    await handleCompanyUpdate({
+      ...editFormData,
+      departments: (editFormData.departments || []).filter(d => d.trim() !== '').join(',')
+    });
+    setShowEditForm(false);
   };
 
   if (loading) {
@@ -88,25 +150,85 @@ const CompanyDashboard = () => {
             <button onClick={handleLogout} className="logout-button">
               Logout
             </button>
+            <button className="btn-primary" style={{marginLeft:'1rem', padding:'0.4rem 0.8rem', fontSize:'0.9rem'}} onClick={handleEditClick}>Edit</button>
           </div>
         </div>
         <div className="company-navbar-overview">
-          <p><strong>Address:</strong> {companyData?.address}</p>
-          <p><strong>Registration Date:</strong> {companyData?.registration_date}</p>
-          <p><strong>Employee Count:</strong> {companyData?.employee_count}</p>
-          {companyData?.created_at && (
-            <p><strong>Created At:</strong> {companyData.created_at}</p>
-          )}
-          {companyData?.updated_at && (
-            <p><strong>Updated At:</strong> {companyData.updated_at}</p>
-          )}
-          {companyData?.created_by && (
-            <p><strong>Created By:</strong> {companyData.created_by}</p>
+          {showEditForm ? (
+            <div className="modal-overlay">
+              <div className="modal-content">
+                <form onSubmit={handleEditFormSubmit} className="company-edit-form">
+                  <div className="form-group">
+                    <label>Name</label>
+                    <input name="name" value={editFormData.name} onChange={handleEditFormChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Address</label>
+                    <input name="address" value={editFormData.address} onChange={handleEditFormChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Registration Date</label>
+                    <input name="registration_date" value={editFormData.registration_date} onChange={handleEditFormChange} type="date" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Registration Number</label>
+                    <input name="registration_number" value={editFormData.registration_number} onChange={handleEditFormChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Contact Person</label>
+                    <input name="contact_person" value={editFormData.contact_person} onChange={handleEditFormChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone</label>
+                    <input name="phone" value={editFormData.phone} onChange={handleEditFormChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input name="email" value={editFormData.email} onChange={handleEditFormChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Departments</label>
+                    {(editFormData.departments || []).map((dept, idx) => (
+                      <div key={idx} style={{display:'flex',alignItems:'center',marginBottom:'0.5rem'}}>
+                        <input
+                          type="text"
+                          value={dept}
+                          onChange={e => handleDepartmentChange(idx, e.target.value)}
+                          placeholder={`Department #${idx+1}`}
+                          style={{marginRight:'0.5rem'}}
+                        />
+                        {(editFormData.departments.length > 1) && (
+                          <button type="button" className="btn-secondary" onClick={() => handleRemoveDepartment(idx)} style={{padding:'0 8px'}}>X</button>
+                        )}
+                      </div>
+                    ))}
+                    <button type="button" className="btn-primary" onClick={handleAddDepartment} style={{marginTop:'0.5rem'}}>Add Department</button>
+                  </div>
+                  <button className="btn-primary" type="submit">Save</button>
+                  <button className="btn-secondary" type="button" onClick={() => setShowEditForm(false)}>Cancel</button>
+                </form>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p><strong>Address:</strong> {companyData?.address}</p>
+              <p><strong>Registration Date:</strong> {companyData?.registration_date}</p>
+              <p><strong>Employee Count:</strong> {companyData?.employee_count}</p>
+              {companyData?.created_at && (
+                <p><strong>Created At:</strong> {new Date(companyData.created_at).toLocaleDateString('en-GB', { dateStyle: 'medium' })}</p>
+              )}
+              {companyData?.updated_at && (
+                <p><strong>Updated At:</strong> {new Date(companyData.updated_at).toLocaleDateString('en-GB', { dateStyle: 'medium' })}</p>
+              )}
+              {companyData?.created_by && (
+                <p><strong>Created By:</strong> {companyData.created_by}</p>
+              )}
+            </>
           )}
         </div>
         <div className="nav-links">
           <Link to="/company" className="nav-link">Overview</Link>
-          <Link to="/company/employees" className="nav-link">Employees</Link>
+          <Link to={`/company/dashboard/${companyData.id}/employees`} className="nav-link">Employees</Link>
           <Link to="/company/verifications" className="nav-link">Verifications</Link>
           <Link to="/company/settings" className="nav-link">Settings</Link>
         </div>
@@ -118,18 +240,22 @@ const CompanyDashboard = () => {
         <div className="stats-grid">
           <div className="stat-card">
             <h3>Total Employees</h3>
-            <p className="stat-number">{companyData.employee_count || (companyData.employees ? companyData.employees.length : 0)}</p>
-          </div>
-          <div className="stat-card">
-            <h3>Active Verifications</h3>
             <p className="stat-number">
-              {companyData.employees ? companyData.employees.filter(emp => emp.verification_status === 'pending').length : 0}
+              {
+                Array.isArray(companyData.employees)
+                  ? companyData.employees.filter(emp => !emp.end_date || new Date(emp.end_date) >= new Date()).length
+                  : (typeof companyData.employee_count === 'number' ? companyData.employee_count : 0)
+              }
             </p>
           </div>
           <div className="stat-card">
-            <h3>Verified Employees</h3>
+            <h3>Total Departments</h3>
             <p className="stat-number">
-              {companyData.employees ? companyData.employees.filter(emp => emp.verification_status === 'verified').length : 0}
+              {
+                Array.isArray(companyData.departments)
+                  ? companyData.departments.filter(d => d && d.trim() !== '').length
+                  : (companyData.departments ? 1 : 0)
+              }
             </p>
           </div>
         </div>

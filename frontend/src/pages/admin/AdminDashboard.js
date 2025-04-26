@@ -3,6 +3,7 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthContext } from '../../auth/AuthContext';
 import { userService } from '../../services/userService';
 import { companyService } from '../../services/companyService';
+import { employeeService } from '../../services/employeeService';
 import CompanyManagement from './CompanyManagement';
 import UserManagement from './UserManagement';
 import '../../styles/Dashboard.css';
@@ -12,7 +13,8 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalCompanies: 0,
-    activeUsers: 0
+    activeUsers: 0,
+    totalEmployees: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -24,15 +26,17 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [users, companies] = await Promise.all([
+        const [users, companies, employees] = await Promise.all([
           userService.getUsers(),
-          companyService.getCompanies()
+          companyService.getCompanies(),
+          employeeService.getEmployees()
         ]);
         
         setStats({
           totalUsers: users.length,
           totalCompanies: companies.length,
-          activeUsers: users.filter(u => u.is_active).length
+          activeUsers: users.filter(u => u.is_active).length,
+          totalEmployees: employees.length
         });
       } catch (err) {
         setError('Failed to fetch dashboard statistics');
@@ -111,6 +115,10 @@ const AdminDashboard = () => {
                 <div className="stat-card">
                   <h3>Active Users</h3>
                   <p className="stat-number">{stats.activeUsers}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Total Employees</h3>
+                  <p className="stat-number">{stats.totalEmployees}</p>
                 </div>
               </div>
               <div className="welcome-message">
