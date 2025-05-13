@@ -76,7 +76,7 @@ TalentVerify/
 - `PUT /api/companies/companies/<id>/` - Update company
 - `GET /api/employees/` - List employees
 - `POST /api/employees/` - Add employee
-- ...and more
+
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
@@ -86,4 +86,3 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ---
 
-For more information, see the documentation in each app folder or contact the maintainers.
