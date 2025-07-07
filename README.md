@@ -76,10 +76,6 @@ TalentVerify/
 - `GET /api/employees/` - List employees
 - `POST /api/employees/` - Add employee
 
-
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
 ## License
 [MIT](LICENSE)
 
