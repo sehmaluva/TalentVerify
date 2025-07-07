@@ -12,7 +12,6 @@ TalentVerify is a comprehensive platform for company and employee management, ve
 - **API Integration**: Connects to backend APIs for company and employee CRUD operations.
 
 ## Project Structure
-
 ```
 TalentVerify/
 ├── backend/
