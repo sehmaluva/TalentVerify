@@ -80,4 +80,3 @@ TalentVerify/
 [MIT](LICENSE)
 
 ---
-
