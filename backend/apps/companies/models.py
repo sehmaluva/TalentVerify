@@ -43,15 +43,7 @@ class Company(models.Model):
             self.employee_count = self.company_employees.count()
             super().save(update_fields=['employee_count'])  # Update only that field
 
-    # --- Encryption logic commented out below ---
-    # _encrypted_registration_number = models.BinaryField(null=True, blank=True, unique=True)
-    # _encrypted_contact_person = models.BinaryField(null=True, blank=True)
-    # _encrypted_phone = models.BinaryField(null=True, blank=True)
-    # _encrypted_email = models.BinaryField(null=True, blank=True)
-
-    # def _get_fernet(self):
-    #     key = settings.ENCRYPTION_KEY.encode()
-    #     return Fernet(key)
+  
 
     # @property
     # def registration_number(self):
