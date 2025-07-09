@@ -44,15 +44,6 @@ class Company(models.Model):
             super().save(update_fields=['employee_count'])  # Update only that field
 
 
-    # def _encrypt_registration_number(self):
-    #     pass  # No longer needed, handled by property setter
-
-    # @property
-    # def contact_person(self):
-    #     if self._encrypted_contact_person:
-    #         return self._get_fernet().decrypt(self._encrypted_contact_person).decode()
-    #     return None
-
     # @contact_person.setter
     # def contact_person(self, value):
     #     if value:
