@@ -17,7 +17,6 @@ class Company(models.Model):
     contact_person = models.CharField(max_length=255)  # Restored plaintext
     phone = models.CharField(max_length=20)  # Restored plaintext
     email = models.EmailField()  # Restored plaintext
-    # Consider removing this if using Department model instead:
     departments = models.TextField(blank=True, default="[]")
     employee_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     created_by = models.ForeignKey(
